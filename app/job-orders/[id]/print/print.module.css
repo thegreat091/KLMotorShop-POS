@@ -1,0 +1,222 @@
+.screenBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 18px;
+  background: #e9eef5;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.screenButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: #172235;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sheet {
+  width: 8.5in;
+  min-height: 11in;
+  margin: 0 auto 28px;
+  background: #fff;
+  padding: 0.28in 0.32in;
+  box-sizing: border-box;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.copy {
+  height: 4.92in;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.cutLine {
+  height: 0.34in;
+  border-top: 1px dashed #687386;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #687386;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #172235;
+}
+.brandKicker {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.shopName {
+  margin: 2px 0 1px;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 900;
+}
+.docTitle {
+  font-size: 9px;
+  font-weight: 700;
+}
+.copyLabel {
+  align-self: flex-start;
+  border: 1px solid #172235;
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.meta {
+  margin-top: 5px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+  font-size: 9px;
+}
+.metaBlock {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 7px 8px;
+}
+.metaTitle {
+  margin-bottom: 5px;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #334155;
+}
+.row {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 6px;
+  margin: 2px 0;
+}
+.label { color: #475569; }
+.value { font-weight: 700; }
+.concern {
+  margin-top: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 7px 8px;
+  min-height: 52px;
+  font-size: 9px;
+}
+.concernTitle {
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+.notesGrid {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  font-size: 8px;
+}
+.blankBox {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  min-height: 40px;
+  padding: 6px;
+}
+.blankTitle {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.signatures {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  padding-top: 12px;
+}
+.signature {
+  border-top: 1px solid #111827;
+  padding-top: 3px;
+  text-align: center;
+  font-size: 7px;
+  text-transform: uppercase;
+  color: #475569;
+}
+.footer {
+  margin-top: 6px;
+  border-top: 1px solid #cbd5e1;
+  padding-top: 4px;
+  font-size: 7px;
+  display: flex;
+  justify-content: space-between;
+  color: #475569;
+}
+@page {
+  size: Letter portrait;
+  margin: 0;
+}
+@media print {
+  html, body {
+    width: 8.5in !important;
+    height: 11in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  .screenBar { display: none !important; }
+  .sheet {
+    width: 8.5in !important;
+    height: 11in !important;
+    min-height: 11in !important;
+    margin: 0 !important;
+    padding: 0.28in 0.32in !important;
+    box-shadow: none !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+}
+@media screen and (max-width: 850px) {
+  .sheet { transform-origin: top left; }
+}
+
+.headerRight {
+  width: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.barcodeBlock {
+  margin-top: 5px;
+  width: 100%;
+  text-align: center;
+}
+
+.barcodeBlock svg {
+  display: block;
+  width: 100%;
+  height: 28px;
+}
+
+.barcodeBlock span {
+  display: block;
+  margin-top: 1px;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}

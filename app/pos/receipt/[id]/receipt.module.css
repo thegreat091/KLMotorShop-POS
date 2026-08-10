@@ -1,0 +1,483 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  background: #e9edf2;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.actions {
+  width: min(100%, 216mm);
+  margin: 0 auto 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actions a,
+.actions button {
+  min-width: 110px;
+  border: 0;
+  border-radius: 7px;
+  padding: 10px 14px;
+  background: #1f2937;
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.document {
+  box-sizing: border-box;
+  width: min(100%, 216mm);
+  min-height: 279mm;
+  margin: 0 auto;
+  padding: 14mm 14mm 12mm;
+  background: #fff;
+  box-shadow: 0 12px 38px rgba(15, 23, 42, 0.12);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 28px;
+  padding-bottom: 15px;
+  border-bottom: 3px solid #111827;
+}
+
+.eyebrow {
+  margin: 0 0 3px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: 0.4px;
+}
+
+.subtitle {
+  margin: 7px 0 0;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.documentNumber {
+  min-width: 210px;
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 5px 10px;
+  text-align: right;
+  font-size: 10px;
+}
+
+.documentNumber span {
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.documentNumber strong {
+  font-size: 11px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.infoCard,
+.jobSection {
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.infoCard h2,
+.sectionTitle {
+  margin: 0;
+  padding: 7px 9px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.infoCard dl {
+  margin: 0;
+  padding: 7px 9px;
+}
+
+.infoCard dl div {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 9.5px;
+}
+
+.infoCard dt {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.infoCard dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.jobSection {
+  margin-top: 10px;
+}
+
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+
+.sectionTitle h2 {
+  margin: 0;
+  font-size: 10px;
+}
+
+.sectionTitle span,
+.sectionTitle strong {
+  font-size: 9.5px;
+}
+
+.jobNotes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.jobNotes > div {
+  min-height: 48px;
+  padding: 8px 9px;
+}
+
+.jobNotes > div + div {
+  border-left: 1px solid #e2e8f0;
+}
+
+.jobNotes span,
+.remarks span {
+  display: block;
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.jobNotes p,
+.remarks p {
+  margin: 0;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+
+.remarks {
+  border-top: 1px solid #e2e8f0;
+  padding: 7px 9px;
+}
+
+.tableSection {
+  margin-top: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.3px;
+}
+
+.itemsTable th {
+  padding: 6px 7px;
+  background: #f8fafc;
+  border-bottom: 1px solid #cbd5e1;
+  color: #475569;
+  text-align: left;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.itemsTable td {
+  padding: 7px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.itemsTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.qty {
+  width: 44px;
+  text-align: center !important;
+}
+
+.money {
+  width: 95px;
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.codeCell {
+  width: 145px;
+  color: #475569;
+  font-size: 8.5px;
+}
+
+.codeCell small {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+}
+
+.emptyRow {
+  padding: 14px !important;
+  color: #64748b;
+  text-align: center;
+}
+
+.summaryArea {
+  display: grid;
+  grid-template-columns: 1fr 255px;
+  gap: 18px;
+  margin-top: 12px;
+  align-items: start;
+}
+
+.notice {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+}
+
+.notice h3 {
+  margin: 0 0 5px;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.notice p {
+  margin: 0;
+  color: #475569;
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+
+.totalBox {
+  border: 1px solid #94a3b8;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.totalBox div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 5px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 9.5px;
+}
+
+.totalBox div:last-child {
+  border-bottom: 0;
+}
+
+.grandTotal {
+  padding: 9px 8px !important;
+  background: #111827;
+  color: #fff;
+  font-size: 12px !important;
+}
+
+.signatures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 30px;
+  padding-top: 18px;
+}
+
+.signatures > div {
+  padding-top: 6px;
+  border-top: 1px solid #111827;
+  text-align: center;
+}
+
+.signatures span,
+.signatures strong {
+  display: block;
+}
+
+.signatures span {
+  font-size: 8px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.signatures strong {
+  margin-top: 3px;
+  min-height: 12px;
+  font-size: 9px;
+}
+
+.footer {
+  margin-top: 22px;
+  padding-top: 9px;
+  border-top: 1px solid #cbd5e1;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  color: #475569;
+  font-size: 8.5px;
+}
+
+@media screen and (max-width: 850px) {
+  .document {
+    min-height: auto;
+    padding: 24px;
+  }
+
+  .infoGrid,
+  .jobNotes,
+  .summaryArea {
+    grid-template-columns: 1fr;
+  }
+
+  .jobNotes > div + div {
+    border-left: 0;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .signatures {
+    grid-template-columns: 1fr;
+  }
+}
+
+@page {
+  size: Letter portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 216mm !important;
+    height: 279mm !important;
+    min-height: 279mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .page {
+    width: 216mm !important;
+    height: 279mm !important;
+    min-height: 279mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .actions {
+    display: none !important;
+  }
+
+  .document {
+    box-sizing: border-box !important;
+    width: 216mm !important;
+    height: 279mm !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 12mm 14mm 10mm !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Preserve the exact desktop/on-screen receipt layout in print. */
+  .header {
+    display: flex !important;
+  }
+
+  .infoGrid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .jobNotes {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .jobNotes > div + div {
+    border-left: 1px solid #e2e8f0 !important;
+    border-top: 0 !important;
+  }
+
+  .summaryArea {
+    display: grid !important;
+    grid-template-columns: 1fr 255px !important;
+    gap: 18px !important;
+  }
+
+  .signatures {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 22px !important;
+  }
+
+  .tableSection,
+  .jobSection,
+  .summaryArea,
+  .signatures {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+.documentNumberWrap {
+  min-width: 220px;
+}
+
+.jobBarcode {
+  margin-top: 7px;
+  margin-left: auto;
+  width: 190px;
+  text-align: center;
+}
+
+.jobBarcode svg {
+  display: block;
+  width: 100%;
+  height: 30px;
+}
+
+.jobBarcode span {
+  display: block;
+  margin-top: 2px;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}

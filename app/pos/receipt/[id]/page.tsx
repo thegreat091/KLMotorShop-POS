@@ -4,7 +4,6 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { PrintReceiptButton } from "./print-button";
-import Barcode39 from "./Barcode39";
 import styles from "./receipt.module.css";
 
 interface SaleRow extends RowDataPacket {
@@ -187,22 +186,14 @@ export default async function ReceiptPage({
             <p className={styles.subtitle}>Service Invoice / Sales Receipt</p>
           </div>
 
-          <div className={styles.documentNumberWrap}>
-            <div className={styles.documentNumber}>
-              <span>Receipt No.</span>
-              <strong>{sale.sale_number}</strong>
-              {sale.job_order_number ? (
-                <>
-                  <span>Job Order</span>
-                  <strong>{sale.job_order_number}</strong>
-                </>
-              ) : null}
-            </div>
+          <div className={styles.documentNumber}>
+            <span>Receipt No.</span>
+            <strong>{sale.sale_number}</strong>
             {sale.job_order_number ? (
-              <div className={styles.jobBarcode}>
-                <Barcode39 value={sale.job_order_number} />
-                <span>{sale.job_order_number}</span>
-              </div>
+              <>
+                <span>Job Order</span>
+                <strong>{sale.job_order_number}</strong>
+              </>
             ) : null}
           </div>
         </header>

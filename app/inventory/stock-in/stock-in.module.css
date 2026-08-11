@@ -1,1 +1,61 @@
 .page{min-height:100vh;background:#f5f7fb;color:#18212f}.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:30px 36px;background:#fff;border-bottom:1px solid #e5e9f0}.backButton{display:inline-flex;align-items:center;gap:8px;color:#526071;text-decoration:none;font-weight:700;margin-bottom:18px}.titleBlock{display:flex;align-items:center;gap:16px}.titleIcon{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:#e9f6ef}.titleBlock p,.panelHeader p{margin:0 0 4px;text-transform:uppercase;letter-spacing:.08em;font-size:12px;font-weight:800;color:#698075}.titleBlock h1,.panelHeader h2{margin:0}.titleBlock span{display:block;margin-top:5px;color:#6b7280}.addButton{display:inline-flex;align-items:center;gap:8px;padding:12px 17px;border-radius:11px;background:#1f7a4c;color:white;text-decoration:none;font-weight:800}.content{padding:28px 36px}.successMessage,.errorMessage{padding:13px 16px;border-radius:10px;margin-bottom:18px;font-weight:700}.successMessage{background:#eaf8ef;color:#25633f}.errorMessage{background:#fff0f0;color:#a33a3a}.panel{background:white;border:1px solid #e4e9ef;border-radius:16px;overflow:hidden;box-shadow:0 8px 26px rgba(28,40,54,.05)}.panelHeader{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid #edf0f4}.panelHeader span{color:#6b7280}.filters{display:flex;gap:10px;padding:16px 22px;border-bottom:1px solid #edf0f4}.filters label{display:flex;align-items:center;gap:8px;flex:1;border:1px solid #dce2e8;border-radius:9px;padding:0 11px;background:#fff}.filters input{width:100%;border:0;outline:0;padding:10px 0;background:transparent}.filters button,.filters a,.viewButton{border:0;border-radius:9px;padding:10px 14px;text-decoration:none;font-weight:800}.filters button{background:#25384b;color:#fff}.filters a{background:#eef2f6;color:#334155}.tableWrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:920px}.table th,.table td{text-align:left;padding:14px 16px;border-bottom:1px solid #edf0f4;vertical-align:middle}.table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#667085;background:#fafbfc}.table td{font-size:14px}.table td span{color:#667085}.viewButton{display:inline-block;background:#eef7f1;color:#226143;padding:8px 12px}.empty{padding:34px;text-align:center;color:#6b7280}.detailGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.detailGrid article{background:#fff;border:1px solid #e4e9ef;border-radius:13px;padding:17px}.detailGrid span{display:block;color:#6b7280;font-size:13px;margin-bottom:7px}.detailGrid strong{font-size:17px}.barcodeValue{display:inline-flex;align-items:center;gap:6px;font-family:monospace;color:#26384a!important}.notes{margin-top:18px;background:#fff;border:1px solid #e4e9ef;border-radius:13px;padding:17px}.notes p{margin:7px 0 0;color:#5d6672}@media(max-width:900px){.hero{align-items:flex-start;flex-direction:column}.content,.hero{padding-left:20px;padding-right:20px}.detailGrid{grid-template-columns:1fr 1fr}.filters{flex-wrap:wrap}.filters label{min-width:100%}}
+
+
+/* Color enhancement only — layout and sizing intentionally unchanged. */
+.page {
+  --module-accent: #0f766e;
+  --module-soft: #f0fdfa;
+  --module-border: #99f6e4;
+}
+
+.hero,
+.header,
+.reportHeader,
+.panelHeader,
+.formHeader {
+  border-color: var(--module-border);
+}
+
+.titleIcon,
+.formIcon,
+.summaryIcon,
+.metricIcon,
+.panelHeaderIcon {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.eyebrow,
+.titleBlock p,
+.panelHeader p {
+  color: var(--module-accent);
+}
+
+.panel,
+.formCard,
+.tableCard,
+.reportHeader {
+  border-top-color: var(--module-accent);
+}
+
+.table th,
+.panel th,
+.tableCard th {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.backButton:hover,
+.back:hover {
+  color: var(--module-accent);
+}
+
+.addButton,
+.primaryButton {
+  background: var(--module-accent);
+}
+
+/* Module-specific color accents. */
+
+.hero{border-bottom-color:#99f6e4}.titleIcon{background:#ccfbf1!important;color:#0f766e!important}.titleBlock p,.panelHeader p{color:#0f766e!important}.addButton{background:#0f766e!important}.panel{border-top-color:#0f766e!important}.table th{background:#f0fdfa!important;color:#0f766e!important}
+

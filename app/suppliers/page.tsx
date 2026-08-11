@@ -80,6 +80,11 @@ export default async function SuppliersPage({
     user.role === "ADMIN" ||
     user.role === "INVENTORY";
 
+  const canOpenSupplierProfile =
+    user.role === "ADMIN" ||
+    user.role === "INVENTORY" ||
+    user.role === "OWNER";
+
   const parameters = await searchParams;
 
   const search = parameters.search?.trim() ?? "";
@@ -92,13 +97,13 @@ export default async function SuppliersPage({
   if (search) {
     conditions.push(`
       (
-        s.supplier_code LIKE ?
-        OR s.supplier_name LIKE ?
-        OR s.contact_person LIKE ?
-        OR s.mobile_number LIKE ?
-        OR s.telephone_number LIKE ?
-        OR s.address LIKE ?
-        OR s.remarks LIKE ?
+        CONVERT(s.supplier_code USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
+        OR CONVERT(s.supplier_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
+        OR CONVERT(s.contact_person USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
+        OR CONVERT(s.mobile_number USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
+        OR CONVERT(s.telephone_number USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
+        OR CONVERT(s.address USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
+        OR CONVERT(s.remarks USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
       )
     `);
 
@@ -446,35 +451,47 @@ export default async function SuppliersPage({
                         </td>
 
                         <td>
-                          {canManageSuppliers ? (
+                          {canOpenSupplierProfile || canManageSuppliers ? (
                             <div className={styles.rowActions}>
-                              <Link
-                                href={`/suppliers/${supplier.id}`}
-                                className={styles.editButton}
-                              >
-                                <Edit3 size={17} />
-                                Edit
-                              </Link>
-
-                              <form action={statusAction}>
-                                <button
-                                  type="submit"
-                                  className={
-                                    supplier.is_active === 1
-                                      ? styles.deactivateButton
-                                      : styles.activateButton
-                                  }
+                              {canOpenSupplierProfile ? (
+                                <Link
+                                  href={`/suppliers/${supplier.id}`}
+                                  className={styles.profileButton}
                                 >
-                                  {supplier.is_active === 1
-                                    ? "Deactivate"
-                                    : "Activate"}
-                                </button>
-                              </form>
+                                  <Eye size={17} />
+                                  Profile
+                                </Link>
+                              ) : null}
+
+                              {canManageSuppliers ? (
+                                <>
+                                  <Link
+                                    href={`/suppliers/${supplier.id}/edit`}
+                                    className={styles.editButton}
+                                  >
+                                    <Edit3 size={17} />
+                                    Edit
+                                  </Link>
+
+                                  <form action={statusAction}>
+                                    <button
+                                      type="submit"
+                                      className={
+                                        supplier.is_active === 1
+                                          ? styles.deactivateButton
+                                          : styles.activateButton
+                                      }
+                                    >
+                                      {supplier.is_active === 1
+                                        ? "Deactivate"
+                                        : "Activate"}
+                                    </button>
+                                  </form>
+                                </>
+                              ) : null}
                             </div>
                           ) : (
-                            <span className={styles.viewOnlyText}>
-                              View only
-                            </span>
+                            <span className={styles.viewOnlyText}>View only</span>
                           )}
                         </td>
                       </tr>

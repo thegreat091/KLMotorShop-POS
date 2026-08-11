@@ -72,10 +72,10 @@ export default async function StockAdjustmentsPage({
         AND (? = '' OR st.transaction_type = ?)
         AND (
           ? = '' OR
-          st.reference_number LIKE ? OR
-          p.product_code LIKE ? OR
-          p.product_name LIKE ? OR
-          st.remarks LIKE ?
+          CONVERT(st.reference_number USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(p.product_code USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(p.product_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(st.remarks USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
         )
       ORDER BY st.transaction_date DESC, st.id DESC
     `,

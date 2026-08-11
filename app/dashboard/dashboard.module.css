@@ -816,3 +816,63 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Color enhancement only — layout and sizing intentionally unchanged. */
+.page {
+  --module-accent: #15803d;
+  --module-soft: #ecfdf3;
+  --module-border: #bbf7d0;
+}
+
+.hero,
+.header,
+.reportHeader,
+.panelHeader,
+.formHeader {
+  border-color: var(--module-border);
+}
+
+.titleIcon,
+.formIcon,
+.summaryIcon,
+.metricIcon,
+.panelHeaderIcon {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.eyebrow,
+.titleBlock p,
+.panelHeader p {
+  color: var(--module-accent);
+}
+
+.panel,
+.formCard,
+.tableCard,
+.reportHeader {
+  border-top-color: var(--module-accent);
+}
+
+.table th,
+.panel th,
+.tableCard th {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.backButton:hover,
+.back:hover {
+  color: var(--module-accent);
+}
+
+.addButton,
+.primaryButton {
+  background: var(--module-accent);
+}
+
+/* Module-specific color accents. */
+
+.sidebar{border-right-color:#bbf7d0}.navSectionLabel{color:#15803d}.metricIcon,.panelHeaderIcon{background:#ecfdf3;color:#15803d}.panel,.analyticsPanel,.notificationPanel{border-top:3px solid #15803d}.chartBar{background:linear-gradient(180deg,#22c55e,#15803d)}.notificationUnread{background:#f0fdf4}.bellIcon{background:#ecfdf3;color:#15803d}
+

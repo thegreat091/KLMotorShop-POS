@@ -213,3 +213,57 @@
     flex-direction: column-reverse;
   }
 }
+
+/* Color enhancement only — layout and sizing intentionally unchanged. */
+.page {
+  --module-accent: #b45309;
+  --module-soft: #fffbeb;
+  --module-border: #fde68a;
+}
+
+.hero,
+.header,
+.reportHeader,
+.panelHeader,
+.formHeader {
+  border-color: var(--module-border);
+}
+
+.titleIcon,
+.formIcon,
+.summaryIcon,
+.metricIcon,
+.panelHeaderIcon {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.eyebrow,
+.titleBlock p,
+.panelHeader p {
+  color: var(--module-accent);
+}
+
+.panel,
+.formCard,
+.tableCard,
+.reportHeader {
+  border-top-color: var(--module-accent);
+}
+
+.table th,
+.panel th,
+.tableCard th {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.backButton:hover,
+.back:hover {
+  color: var(--module-accent);
+}
+
+.addButton,
+.primaryButton {
+  background: var(--module-accent);
+}

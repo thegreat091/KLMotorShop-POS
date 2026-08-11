@@ -5,7 +5,9 @@ import {
   Bell,
   Bike,
   Boxes,
+  Gauge,
   Building2,
+  DatabaseBackup,
   Check,
   CircleDollarSign,
   ClipboardPenLine,
@@ -14,6 +16,8 @@ import {
   PackagePlus,
   PackageX,
   ReceiptText,
+  PiggyBank,
+  Landmark,
   Settings2,
   ShoppingCart,
   Tags,
@@ -21,6 +25,8 @@ import {
   UserCog,
   UsersRound,
   Wrench,
+  WalletCards,
+  HandCoins,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -178,6 +184,16 @@ export default async function DashboardPage() {
   const canManageClients = ["ADMIN", "OWNER", "CASHIER"].includes(user.role);
   const canViewSuppliers = ["ADMIN", "INVENTORY", "OWNER", "CASHIER"].includes(user.role);
   const canViewActivityLogs = user.role === "ADMIN" || user.role === "OWNER";
+  const canManageUsers = user.role === "ADMIN" || user.role === "OWNER";
+  const canManageSettings = user.role === "ADMIN" || user.role === "OWNER";
+  const canManageBackups = user.role === "ADMIN" || user.role === "OWNER";
+  const canViewFinance = ["ADMIN", "OWNER", "CASHIER"].includes(user.role);
+  const canUsePos = ["ADMIN", "CASHIER"].includes(user.role);
+  const canViewSalesService = ["ADMIN", "OWNER", "CASHIER"].includes(user.role);
+  const canViewInventoryDashboard = ["ADMIN", "OWNER", "INVENTORY"].includes(user.role);
+  const canViewPurchasing = ["ADMIN", "OWNER", "INVENTORY"].includes(user.role);
+  const canManageCapital = ["ADMIN", "OWNER"].includes(user.role);
+  const canViewReports = ["ADMIN", "OWNER", "CASHIER", "INVENTORY"].includes(user.role);
   const isOwnerView = user.role === "ADMIN" || user.role === "OWNER";
   const isCashierView = user.role === "ADMIN" || user.role === "CASHIER" || user.role === "OWNER";
   const isInventoryView = user.role === "ADMIN" || user.role === "INVENTORY" || user.role === "OWNER";
@@ -422,12 +438,14 @@ export default async function DashboardPage() {
               <Link className={styles.activeLink} href="/dashboard"><Boxes size={20} />Dashboard</Link>
             </div>
 
-            <div className={styles.navSection}>
-              <span className={styles.navSectionLabel}>Sales & Service</span>
-              <Link href="/pos"><ShoppingCart size={20} />Point of Sale</Link>
-              <Link href="/job-orders"><ReceiptText size={20} />Job Orders</Link>
-              <Link href="/sales"><ReceiptText size={20} />Sales</Link>
-            </div>
+            {canViewSalesService ? (
+              <div className={styles.navSection}>
+                <span className={styles.navSectionLabel}>Sales & Service</span>
+                {canUsePos ? <Link href="/pos"><ShoppingCart size={20} />Point of Sale</Link> : null}
+                <Link href="/job-orders"><ReceiptText size={20} />Job Orders</Link>
+                <Link href="/sales"><ReceiptText size={20} />Sales</Link>
+              </div>
+            ) : null}
 
             {canManageClients ? (
               <div className={styles.navSection}>
@@ -452,20 +470,58 @@ export default async function DashboardPage() {
               {canManageInventory ? <Link href="/inventory/stock-in"><PackagePlus size={20} />Stock In</Link> : null}
               {canManageInventory ? <Link href="/inventory/stock-adjustments"><ClipboardPenLine size={20} />Stock Out / Adjustments</Link> : null}
               {(canManageInventory || user.role === "OWNER") ? <Link href="/inventory/ledger"><Activity size={20} />Inventory Ledger</Link> : null}
-              <Link href="/inventory/stock-inquiry"><PackageSearch size={20} />Stock Inquiry</Link>
+              {canViewInventoryDashboard ? <Link href="/inventory-dashboard"><Gauge size={20} />Inventory Dashboard</Link> : null}
+                <Link href="/inventory/stock-inquiry"><PackageSearch size={20} />Stock Inquiry</Link>
               {canManageInventory ? (
                 <>
                   <Link href="/categories"><Tags size={20} />Categories</Link>
                   <Link href="/brands"><Tags size={20} />Brands</Link>
-                  {canViewSuppliers ? <Link href="/suppliers"><Building2 size={20} />Suppliers</Link> : null}
                 </>
               ) : null}
+              {canViewSuppliers ? <Link href="/suppliers"><Building2 size={20} />Suppliers</Link> : null}
+              {canViewPurchasing ? <Link href="/purchasing"><ShoppingCart size={20} />Purchasing</Link> : null}
             </div>
 
-            {canViewActivityLogs ? (
+            {canViewFinance ? (
+              <div className={styles.navSection}>
+                <span className={styles.navSectionLabel}>Finance</span>
+                <Link href="/money-ledger">
+                  <WalletCards size={20} />
+                  Money Ledger
+                </Link>
+                <Link href="/mechanic-payouts">
+                  <HandCoins size={20} />
+                  Mechanic Payouts
+                </Link>
+                <Link href="/expenses">
+                  <ReceiptText size={20} />
+                  Expenses
+                </Link>
+                {canManageCapital ? (
+                  <Link href="/capital-injections">
+                    <PiggyBank size={20} />
+                    Capital Injection
+                  </Link>
+                ) : null}
+                <Link href="/bank-transfers">
+                  <Landmark size={20} />
+                  Bank Deposit / Transfer
+                </Link>
+                <Link href="/mechanic-cash-advances">
+                  <HandCoins size={20} />
+                  Cash Advances
+                </Link>
+              </div>
+            ) : null}
+
+            {(canViewReports || canManageUsers || canManageSettings || canManageBackups || canViewActivityLogs) ? (
               <div className={styles.navSection}>
                 <span className={styles.navSectionLabel}>Administration</span>
-                <Link href="/activity-logs"><Activity size={20} />Activity Logs</Link>
+                {canViewReports ? <Link href="/reports"><BarChart3 size={20} />Reports</Link> : null}
+                {canManageUsers ? <Link href="/users"><UserCog size={20} />Users</Link> : null}
+                {canManageSettings ? <Link href="/settings"><Settings2 size={20} />Settings</Link> : null}
+{canManageBackups ? <Link href="/backup-restore"><DatabaseBackup size={20} />Backup & Restore</Link> : null}
+                {canViewActivityLogs ? <Link href="/activity-logs"><Activity size={20} />Activity Logs</Link> : null}
               </div>
             ) : null}
           </nav>

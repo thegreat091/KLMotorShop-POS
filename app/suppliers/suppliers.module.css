@@ -437,6 +437,7 @@
   gap: 8px;
 }
 
+.profileButton,
 .editButton,
 .deactivateButton,
 .activateButton {
@@ -451,6 +452,12 @@
   font-weight: 800;
   cursor: pointer;
   text-decoration: none;
+}
+
+.profileButton {
+  border: 1px solid #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
 }
 
 .editButton {
@@ -527,4 +534,58 @@
   .filters {
     grid-template-columns: 1fr;
   }
+}
+
+/* Color enhancement only — layout and sizing intentionally unchanged. */
+.page {
+  --module-accent: #7c3aed;
+  --module-soft: #f5f3ff;
+  --module-border: #ddd6fe;
+}
+
+.hero,
+.header,
+.reportHeader,
+.panelHeader,
+.formHeader {
+  border-color: var(--module-border);
+}
+
+.titleIcon,
+.formIcon,
+.summaryIcon,
+.metricIcon,
+.panelHeaderIcon {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.eyebrow,
+.titleBlock p,
+.panelHeader p {
+  color: var(--module-accent);
+}
+
+.panel,
+.formCard,
+.tableCard,
+.reportHeader {
+  border-top-color: var(--module-accent);
+}
+
+.table th,
+.panel th,
+.tableCard th {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.backButton:hover,
+.back:hover {
+  color: var(--module-accent);
+}
+
+.addButton,
+.primaryButton {
+  background: var(--module-accent);
 }

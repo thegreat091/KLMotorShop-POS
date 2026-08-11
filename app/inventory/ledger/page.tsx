@@ -162,13 +162,13 @@ export default async function InventoryLedgerPage({
       AND (? = '' OR DATE(im.created_at) <= ?)
       AND (
         ? = '' OR
-        p.product_code LIKE ? OR
-        p.product_name LIKE ? OR
-        COALESCE(p.barcode, '') LIKE ? OR
-        COALESCE(st.reference_number, '') LIKE ? OR
-        COALESCE(s.sale_number, '') LIKE ? OR
-        COALESCE(im.reference_id, '') LIKE ? OR
-        COALESCE(im.remarks, '') LIKE ?
+        CONVERT(p.product_code USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+        CONVERT(p.product_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+        CONVERT(COALESCE(p.barcode, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+        CONVERT(COALESCE(st.reference_number, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+        CONVERT(COALESCE(s.sale_number, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+        CONVERT(COALESCE(im.reference_id, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+        CONVERT(COALESCE(im.remarks, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
       )
     ORDER BY im.created_at DESC, im.id DESC
     LIMIT 1000
@@ -213,13 +213,13 @@ export default async function InventoryLedgerPage({
         AND (? = '' OR DATE(im.created_at) <= ?)
         AND (
           ? = '' OR
-          p.product_code LIKE ? OR
-          p.product_name LIKE ? OR
-          COALESCE(p.barcode, '') LIKE ? OR
-          COALESCE(st.reference_number, '') LIKE ? OR
-          COALESCE(s.sale_number, '') LIKE ? OR
-          COALESCE(im.reference_id, '') LIKE ? OR
-          COALESCE(im.remarks, '') LIKE ?
+          CONVERT(p.product_code USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(p.product_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(COALESCE(p.barcode, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(COALESCE(st.reference_number, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(COALESCE(s.sale_number, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(COALESCE(im.reference_id, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR
+          CONVERT(COALESCE(im.remarks, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
         )
     `,
     values,

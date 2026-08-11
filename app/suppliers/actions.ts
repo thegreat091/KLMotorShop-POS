@@ -319,7 +319,7 @@ export async function updateSupplier(
   if (validationError) {
     redirect(
       buildRedirectUrl(
-        `/suppliers/${supplierId}`,
+        `/suppliers/${supplierId}/edit`,
         "error",
         validationError,
       ),
@@ -341,7 +341,7 @@ export async function updateSupplier(
   if (existingSuppliers.length > 0) {
     redirect(
       buildRedirectUrl(
-        `/suppliers/${supplierId}`,
+        `/suppliers/${supplierId}/edit`,
         "error",
         "Another supplier already uses this name.",
       ),
@@ -396,6 +396,7 @@ export async function updateSupplier(
 
   revalidatePath("/suppliers");
   revalidatePath(`/suppliers/${supplierId}`);
+  revalidatePath(`/suppliers/${supplierId}/edit`);
 
   redirect(
     buildRedirectUrl(

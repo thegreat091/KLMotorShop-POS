@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { jwtVerify, SignJWT } from "jose";
+import { jwtVerify, SignJWT, type JWTPayload } from "jose";
 
 export const SESSION_COOKIE_NAME = "kl_motor_shop_session";
 
@@ -13,7 +13,7 @@ export interface SessionUser {
   role: UserRole;
 }
 
-interface SessionPayload {
+interface SessionPayload extends JWTPayload {
   userId: number;
   employeeId: string | null;
   fullName: string;

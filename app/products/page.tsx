@@ -76,8 +76,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   if (search) {
     conditions.push(`(
-      p.product_code LIKE ? OR p.barcode LIKE ? OR p.product_name LIKE ?
-      OR pc.category_name LIKE ? OR pb.brand_name LIKE ? OR s.supplier_name LIKE ?
+      CONVERT(p.product_code USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR CONVERT(p.barcode USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR CONVERT(p.product_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
+      OR CONVERT(pc.category_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR CONVERT(pb.brand_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR CONVERT(s.supplier_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci
     )`);
     const value = `%${search}%`;
     values.push(value, value, value, value, value, value);

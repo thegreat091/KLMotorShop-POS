@@ -151,3 +151,63 @@
   .filters { grid-template-columns: 1fr; }
   .hero { flex-direction: column; }
 }
+
+
+/* Color enhancement only — layout and sizing intentionally unchanged. */
+.page {
+  --module-accent: #15803d;
+  --module-soft: #ecfdf3;
+  --module-border: #bbf7d0;
+}
+
+.hero,
+.header,
+.reportHeader,
+.panelHeader,
+.formHeader {
+  border-color: var(--module-border);
+}
+
+.titleIcon,
+.formIcon,
+.summaryIcon,
+.metricIcon,
+.panelHeaderIcon {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.eyebrow,
+.titleBlock p,
+.panelHeader p {
+  color: var(--module-accent);
+}
+
+.panel,
+.formCard,
+.tableCard,
+.reportHeader {
+  border-top-color: var(--module-accent);
+}
+
+.table th,
+.panel th,
+.tableCard th {
+  background: var(--module-soft);
+  color: var(--module-accent);
+}
+
+.backButton:hover,
+.back:hover {
+  color: var(--module-accent);
+}
+
+.addButton,
+.primaryButton {
+  background: var(--module-accent);
+}
+
+/* Module-specific color accents. */
+
+.hero{border-top:3px solid #15803d}.eyebrow{color:#15803d}.count{background:#ecfdf3!important;color:#166534!important}.tableCard{border-top:3px solid #15803d}.tableCard th{background:#ecfdf3!important;color:#166534!important}
+

@@ -26,7 +26,7 @@ export default async function StockInPage({ searchParams }: { searchParams: Prom
     LEFT JOIN stock_in_meta sim ON sim.stock_transaction_id = st.id
     LEFT JOIN stock_transaction_items sti ON sti.stock_transaction_id = st.id
     WHERE st.transaction_type='STOCK_IN'
-      AND (? = '' OR st.reference_number LIKE ? OR s.supplier_name LIKE ? OR sim.supplier_reference LIKE ?)
+      AND (? = '' OR CONVERT(st.reference_number USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR CONVERT(s.supplier_name USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci OR CONVERT(sim.supplier_reference USING utf8mb4) COLLATE utf8mb4_unicode_ci LIKE CONVERT(? USING utf8mb4) COLLATE utf8mb4_unicode_ci)
     GROUP BY st.id, st.reference_number, st.transaction_date, s.supplier_name, sim.supplier_reference
     ORDER BY st.transaction_date DESC, st.id DESC
   `, [search, `%${search}%`, `%${search}%`, `%${search}%`]);

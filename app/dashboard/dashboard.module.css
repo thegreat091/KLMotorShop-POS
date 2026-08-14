@@ -876,3 +876,147 @@
 
 .sidebar{border-right-color:#bbf7d0}.navSectionLabel{color:#15803d}.metricIcon,.panelHeaderIcon{background:#ecfdf3;color:#15803d}.panel,.analyticsPanel,.notificationPanel{border-top:3px solid #15803d}.chartBar{background:linear-gradient(180deg,#22c55e,#15803d)}.notificationUnread{background:#f0fdf4}.bellIcon{background:#ecfdf3;color:#15803d}
 
+
+
+/* Inventory-role dashboard refinements */
+.inventoryQuickActions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.inventoryQuickActions > a {
+  min-width: 0;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 17px;
+  border: 1px solid #dbe7df;
+  border-radius: 15px;
+  background: #ffffff;
+  color: #111827;
+  text-decoration: none;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.035);
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.inventoryQuickActions > a:hover {
+  transform: translateY(-2px);
+  border-color: #86efac;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.07);
+}
+
+.inventoryQuickActions > a > svg {
+  flex: 0 0 auto;
+  padding: 9px;
+  box-sizing: content-box;
+  border-radius: 11px;
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+.inventoryQuickActions > a > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.inventoryQuickActions strong {
+  font-size: 13px;
+}
+
+.inventoryQuickActions span {
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1350px) {
+  .inventoryQuickActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .inventoryQuickActions {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Cashier-role dashboard refinements */
+.cashierQuickActions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.cashierQuickActions > a {
+  min-width: 0;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 17px;
+  border: 1px solid #fed7aa;
+  border-radius: 15px;
+  background: #ffffff;
+  color: #111827;
+  text-decoration: none;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.035);
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.cashierQuickActions > a:hover {
+  transform: translateY(-2px);
+  border-color: #fb923c;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.07);
+}
+
+.cashierQuickActions > a > svg {
+  flex: 0 0 auto;
+  padding: 9px;
+  box-sizing: content-box;
+  border-radius: 11px;
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.cashierQuickActions > a > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.cashierQuickActions strong {
+  font-size: 13px;
+}
+
+.cashierQuickActions span {
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.cashierPriorityPanel {
+  overflow: hidden;
+  border: 1px solid #fed7aa;
+  border-top: 3px solid #ea580c;
+  border-radius: 17px;
+  background: #ffffff;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 1350px) {
+  .cashierQuickActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .cashierQuickActions {
+    grid-template-columns: 1fr;
+  }
+}

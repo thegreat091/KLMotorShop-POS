@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       name: SESSION_COOKIE_NAME,
       value: sessionToken,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 60 * 60 * 12,
       path: "/",

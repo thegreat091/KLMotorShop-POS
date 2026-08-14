@@ -530,9 +530,27 @@ export default async function DashboardPage() {
         <section className={styles.content}>
           <div className={styles.welcome}>
             <div>
-              <p>Dashboard</p>
-              <h1>Welcome, {user.fullName}</h1>
-              <span>Live overview of today&apos;s sales, workshop, and inventory.</span>
+              <p>
+                {user.role === "INVENTORY"
+                  ? "Inventory Control Center"
+                  : user.role === "CASHIER"
+                    ? "Cashier Control Center"
+                    : "Dashboard"}
+              </p>
+              <h1>
+                {user.role === "INVENTORY"
+                  ? "Inventory Dashboard"
+                  : user.role === "CASHIER"
+                    ? "Cashier Dashboard"
+                    : `Welcome, ${user.fullName}`}
+              </h1>
+              <span>
+                {user.role === "INVENTORY"
+                  ? `Welcome, ${user.fullName}. Monitor stock levels, replenishment, and recent inventory movement.`
+                  : user.role === "CASHIER"
+                    ? `Welcome, ${user.fullName}. Monitor today's sales, customer payments, and ready job orders.`
+                    : "Live overview of today&apos;s sales, workshop, and inventory."}
+              </span>
             </div>
             {user.role !== "INVENTORY" ? <Link href="/pos" className={styles.newSaleButton}><ShoppingCart size={20} />New Sale</Link> : <Link href="/inventory/stock-in" className={styles.newSaleButton}><PackagePlus size={20} />Stock In</Link>}
           </div>
@@ -540,18 +558,41 @@ export default async function DashboardPage() {
           <div className={styles.metrics}>
             {isCashierView ? (
               <>
-                <article><div className={styles.metricIcon}><CircleDollarSign size={25} /></div><div><span>Today&apos;s Sales</span><strong>{money(Number(summary.today_sales))}</strong><small>{Number(summary.today_transactions)} completed transactions</small></div></article>
-                <article><div className={styles.metricIcon}><ReceiptText size={25} /></div><div><span>Job Orders Today</span><strong>{Number(summary.today_jobs)}</strong><small>{Number(summary.ready_for_payment)} ready for payment</small></div></article>
+                <article><div className={styles.metricIcon}><CircleDollarSign size={25} /></div><div><span>Today&apos;s Sales</span><strong>{money(Number(summary.today_sales))}</strong><small>Total completed sales today</small></div></article>
+                {user.role === "CASHIER" ? (
+                  <>
+                    <article><div className={styles.metricIcon}><ShoppingCart size={25} /></div><div><span>Transactions</span><strong>{Number(summary.today_transactions)}</strong><small>Completed POS transactions today</small></div></article>
+                    <article><div className={styles.metricIcon}><ReceiptText size={25} /></div><div><span>Job Orders Today</span><strong>{Number(summary.today_jobs)}</strong><small>Workshop jobs received today</small></div></article>
+                    <article><div className={styles.metricIcon}><WalletCards size={25} /></div><div><span>Ready for Payment</span><strong>{Number(summary.ready_for_payment)}</strong><small>Job orders waiting for cashier</small></div></article>
+                  </>
+                ) : (
+                  <article><div className={styles.metricIcon}><ReceiptText size={25} /></div><div><span>Job Orders Today</span><strong>{Number(summary.today_jobs)}</strong><small>{Number(summary.ready_for_payment)} ready for payment</small></div></article>
+                )}
               </>
             ) : null}
             {isInventoryView ? (
               <>
+                {user.role === "INVENTORY" ? (
+                  <article><div className={styles.metricIcon}><Boxes size={25} /></div><div><span>Active Products</span><strong>{Number(summary.active_products)}</strong><small>Products currently tracked in inventory</small></div></article>
+                ) : null}
                 <article><div className={styles.metricIcon}><PackageSearch size={25} /></div><div><span>Low Stock</span><strong>{Number(summary.low_stock)}</strong><small>Products at or below reorder level</small></div></article>
-                <article><div className={styles.metricIcon}><PackageX size={25} /></div><div><span>Out of Stock</span><strong>{Number(summary.out_of_stock)}</strong><small>{Number(summary.active_products)} active products</small></div></article>
+                <article><div className={styles.metricIcon}><PackageX size={25} /></div><div><span>Out of Stock</span><strong>{Number(summary.out_of_stock)}</strong><small>Products requiring replenishment</small></div></article>
+                {user.role === "INVENTORY" ? (
+                  <article><div className={styles.metricIcon}><CircleDollarSign size={25} /></div><div><span>Inventory Value</span><strong>{money(Number(summary.inventory_value))}</strong><small>Current cost × on-hand quantity</small></div></article>
+                ) : null}
               </>
             ) : null}
             {isOwnerView ? <article><div className={styles.metricIcon}><Boxes size={25} /></div><div><span>Inventory Value</span><strong>{money(Number(summary.inventory_value))}</strong><small>Based on current cost × on-hand quantity</small></div></article> : null}
           </div>
+
+          {user.role === "CASHIER" ? (
+            <div className={styles.cashierQuickActions}>
+              <Link href="/pos"><ShoppingCart size={22} /><div><strong>New Sale</strong><span>Start a new POS transaction</span></div></Link>
+              <Link href="/job-orders"><ReceiptText size={22} /><div><strong>Job Orders</strong><span>Open workshop orders and payments</span></div></Link>
+              <Link href="/sales"><CircleDollarSign size={22} /><div><strong>Sales History</strong><span>Review completed transactions</span></div></Link>
+              <Link href="/money-ledger"><WalletCards size={22} /><div><strong>Money Ledger</strong><span>Review shop cash movement</span></div></Link>
+            </div>
+          ) : null}
 
           <div className={styles.dashboardGrid}>
             <div className={styles.mainColumn}>
@@ -576,6 +617,30 @@ export default async function DashboardPage() {
                 </article>
               ) : null}
 
+              {user.role === "CASHIER" ? (
+                <article className={styles.cashierPriorityPanel}>
+                  <header className={styles.panelHeader}>
+                    <div><p>Payment Queue</p><h2>Job orders ready for payment</h2></div>
+                    <Link href="/job-orders">View all</Link>
+                  </header>
+                  <div className={styles.list}>
+                    {readyJobs.length === 0 ? (
+                      <div className={styles.compactEmpty}>No job orders are waiting for payment.</div>
+                    ) : (
+                      readyJobs.map((job) => (
+                        <Link href={`/job-orders/${job.id}`} className={styles.listRow} key={job.id}>
+                          <div>
+                            <strong>{job.job_order_number}</strong>
+                            <span>{job.client_name || "No client"} · {shortDateTime(job.updated_at)}</span>
+                          </div>
+                          <span className={`${styles.statusPill} ${styles.statusWarning}`}>READY FOR PAYMENT</span>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </article>
+              ) : null}
+
               <div className={styles.twoPanels}>
                 {isCashierView ? (
                   <article className={styles.analyticsPanel}>
@@ -591,17 +656,19 @@ export default async function DashboardPage() {
                   </article>
                 ) : null}
 
-                <article className={styles.analyticsPanel}>
-                  <header className={styles.panelHeader}><div><p>Workshop</p><h2>Recent Job Orders</h2></div><Link href="/job-orders">View all</Link></header>
-                  <div className={styles.list}>
-                    {recentJobs.length === 0 ? <div className={styles.compactEmpty}>No Job Orders yet.</div> : recentJobs.map((job) => (
-                      <Link href={`/job-orders/${job.id}`} className={styles.listRow} key={job.id}>
-                        <div><strong>{job.job_order_number}</strong><span>{job.client_name || "No client"}{job.plate_number ? ` · ${job.plate_number}` : ""}</span></div>
-                        <span className={`${styles.statusPill} ${job.status === "READY_FOR_PAYMENT" ? styles.statusWarning : ""}`}>{statusLabel(job.status)}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </article>
+                {user.role !== "INVENTORY" ? (
+                  <article className={styles.analyticsPanel}>
+                    <header className={styles.panelHeader}><div><p>{user.role === "CASHIER" ? "Workshop Queue" : "Workshop"}</p><h2>{user.role === "CASHIER" ? "Recent Job Orders" : "Recent Job Orders"}</h2></div><Link href="/job-orders">View all</Link></header>
+                    <div className={styles.list}>
+                      {recentJobs.length === 0 ? <div className={styles.compactEmpty}>No Job Orders yet.</div> : recentJobs.map((job) => (
+                        <Link href={`/job-orders/${job.id}`} className={styles.listRow} key={job.id}>
+                          <div><strong>{job.job_order_number}</strong><span>{job.client_name || "No client"}{job.plate_number ? ` · ${job.plate_number}` : ""}</span></div>
+                          <span className={`${styles.statusPill} ${job.status === "READY_FOR_PAYMENT" ? styles.statusWarning : ""}`}>{statusLabel(job.status)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </article>
+                ) : null}
               </div>
 
               {isOwnerView ? (
@@ -621,9 +688,32 @@ export default async function DashboardPage() {
                 </div>
               ) : null}
 
+              {user.role === "INVENTORY" ? (
+                <>
+                  <div className={styles.inventoryQuickActions}>
+                    <Link href="/inventory/stock-in"><PackagePlus size={22} /><div><strong>Receive Stock</strong><span>Record incoming products and batches</span></div></Link>
+                    <Link href="/inventory/stock-adjustments"><ClipboardPenLine size={22} /><div><strong>Stock Adjustment</strong><span>Record stock out and corrections</span></div></Link>
+                    <Link href="/inventory/stock-inquiry"><PackageSearch size={22} /><div><strong>Stock Inquiry</strong><span>Check current product availability</span></div></Link>
+                    <Link href="/inventory/ledger"><Activity size={22} /><div><strong>Inventory Ledger</strong><span>Review complete stock movement</span></div></Link>
+                  </div>
+
+                  <article className={styles.analyticsPanel}>
+                    <header className={styles.panelHeader}><div><p>Stock Movement</p><h2>Recent inventory activity</h2></div><Link href="/inventory/ledger">View ledger</Link></header>
+                    <div className={styles.list}>
+                      {stockEvents.length === 0 ? <div className={styles.compactEmpty}>No recent inventory movement.</div> : stockEvents.map((event) => (
+                        <Link href={event.transaction_type === "STOCK_IN" ? `/inventory/stock-in/${event.id}` : "/inventory/ledger"} className={styles.listRow} key={event.id}>
+                          <div><strong>{event.reference_number}</strong><span>{shortDateTime(event.transaction_date)}</span></div>
+                          <span className={styles.statusPill}>{statusLabel(event.transaction_type)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </article>
+                </>
+              ) : null}
+
               {isInventoryView ? (
                 <article className={styles.analyticsPanel}>
-                  <header className={styles.panelHeader}><div><p>Inventory</p><h2>Products needing attention</h2></div><Link href="/inventory/stock-inquiry">Stock inquiry</Link></header>
+                  <header className={styles.panelHeader}><div><p>Inventory Alert</p><h2>Products needing attention</h2></div><Link href="/inventory/stock-inquiry">Stock inquiry</Link></header>
                   <div className={styles.stockTable}>
                     {lowStocks.length === 0 ? <div className={styles.compactEmpty}>All active products are above their reorder level.</div> : lowStocks.map((product) => (
                       <Link href={`/products/${product.id}`} className={styles.stockRow} key={product.id}>

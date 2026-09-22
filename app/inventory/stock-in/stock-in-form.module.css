@@ -54,3 +54,5 @@
 .primaryButton {
   background: var(--module-accent);
 }
+
+.formError{display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;font-weight:700}.formError svg{flex:0 0 auto;margin-top:1px}.actions button:disabled{opacity:.65;cursor:not-allowed}

@@ -58,7 +58,9 @@ async function logActivity(connection: PoolConnection, params: {
   );
 }
 
-export async function createStockIn(formData: FormData) {
+export type StockInActionState = { error: string };
+
+export async function createStockIn(_previousState: StockInActionState, formData: FormData): Promise<StockInActionState> {
   const user = await requireInventoryManager();
   const supplierIdRaw = text(formData.get("supplier_id"));
   const supplierId = supplierIdRaw ? Number(supplierIdRaw) : null;
@@ -71,11 +73,11 @@ export async function createStockIn(formData: FormData) {
   const sellingPrices = formData.getAll("selling_price").map((value) => number(value));
 
   if (supplierId !== null && (!Number.isInteger(supplierId) || supplierId <= 0)) {
-    redirect(redirectUrl("/inventory/stock-in/new", "error", "Invalid supplier."));
+    return { error: "Invalid supplier." };
   }
 
   if (productIds.length === 0) {
-    redirect(redirectUrl("/inventory/stock-in/new", "error", "Add at least one product."));
+    return { error: "Add at least one product." };
   }
 
   if (
@@ -83,7 +85,7 @@ export async function createStockIn(formData: FormData) {
     productIds.length !== unitCosts.length ||
     productIds.length !== sellingPrices.length
   ) {
-    redirect(redirectUrl("/inventory/stock-in/new", "error", "Stock-in item data is incomplete."));
+    return { error: "Stock-in item data is incomplete." };
   }
 
   const seen = new Set<number>();
@@ -94,20 +96,20 @@ export async function createStockIn(formData: FormData) {
     const sellingPrice = sellingPrices[index];
 
     if (!Number.isInteger(productId) || productId <= 0) {
-      redirect(redirectUrl("/inventory/stock-in/new", "error", "Select a valid product for every line."));
+      return { error: `Select a valid product on line ${index + 1}. Your Stock In entries were kept.` };
     }
     if (seen.has(productId)) {
-      redirect(redirectUrl("/inventory/stock-in/new", "error", "A product can only appear once per stock-in transaction."));
+      return { error: `The product on line ${index + 1} was already added. Remove the duplicate and save again. Your Stock In entries were kept.` };
     }
     seen.add(productId);
     if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isInteger(quantity)) {
-      redirect(redirectUrl("/inventory/stock-in/new", "error", "Quantity must be a whole number greater than zero."));
+      return { error: `Quantity on line ${index + 1} must be a whole number greater than zero. Your Stock In entries were kept.` };
     }
     if (!Number.isFinite(unitCost) || unitCost < 0) {
-      redirect(redirectUrl("/inventory/stock-in/new", "error", "Unit cost must be zero or greater."));
+      return { error: `Unit cost on line ${index + 1} must be zero or greater. Your Stock In entries were kept.` };
     }
     if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
-      redirect(redirectUrl("/inventory/stock-in/new", "error", "Selling price must be zero or greater."));
+      return { error: `Selling price on line ${index + 1} must be zero or greater. Your Stock In entries were kept.` };
     }
   }
 
@@ -253,7 +255,7 @@ export async function createStockIn(formData: FormData) {
     await connection.rollback();
     console.error("Stock-in creation error:", error);
     const message = error instanceof Error ? error.message : "Unable to save stock-in transaction.";
-    redirect(redirectUrl("/inventory/stock-in/new", "error", message));
+    return { error: `${message} Your Stock In entries were kept so you can correct the problem and try again.` };
   } finally {
     connection.release();
   }
@@ -261,5 +263,5 @@ export async function createStockIn(formData: FormData) {
   revalidatePath("/inventory/stock-in");
   revalidatePath("/products");
   revalidatePath("/dashboard");
-  redirect(`/inventory/stock-in/${createdStockInId}?success=${encodeURIComponent("Stock-in saved. Barcode labels are ready to print.")}`);
+  redirect(`/inventory/stock-in/${createdStockInId}?success=${encodeURIComponent("Stock-in saved. QR code labels are ready to print.")}`);
 }

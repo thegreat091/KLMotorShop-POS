@@ -19,7 +19,7 @@ export default async function NewStockInPage({ searchParams }: { searchParams: P
   const [suppliers] = await pool.query<SupplierRow[]>(`SELECT id, supplier_name FROM suppliers WHERE is_active = 1 ORDER BY supplier_name`);
 
   return <main className={styles.page}>
-    <header className={styles.hero}><div><Link href="/inventory/stock-in" className={styles.backButton}><ArrowLeft size={19} /> Stock In</Link><div className={styles.titleBlock}><div className={styles.titleIcon}><PackagePlus size={28} /></div><div><p>Inventory</p><h1>New Stock In</h1><span>Receive products, create batches, and generate barcode stickers.</span></div></div></div></header>
+    <header className={styles.hero}><div><Link href="/inventory/stock-in" className={styles.backButton}><ArrowLeft size={19} /> Stock In</Link><div className={styles.titleBlock}><div className={styles.titleIcon}><PackagePlus size={28} /></div><div><p>Inventory</p><h1>New Stock In</h1><span>Receive products, create batches, and generate QR code stickers.</span></div></div></div></header>
     <section className={styles.content}>{parameters.error ? <div className={styles.errorMessage}>{parameters.error}</div> : null}<StockInForm products={products.map((row) => ({ ...row }))} suppliers={suppliers.map((row) => ({ ...row }))} /></section>
   </main>;
 }

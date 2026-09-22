@@ -145,9 +145,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
 
         {canManageProducts ? (
-          <Link href="/products/new" className={styles.addButton}>
-            <Plus size={19} /> Add Product
-          </Link>
+          <div style={{display:"flex",gap:"10px"}}>
+            <Link href="/inventory/initial-inventory" className={styles.addButton}>
+              <Boxes size={19} /> Initial Inventory
+            </Link>
+            <Link href="/products/new" className={styles.addButton}>
+              <Plus size={19} /> Add Product
+            </Link>
+          </div>
         ) : (
           <span className={styles.viewOnlyBadge}>View only</span>
         )}

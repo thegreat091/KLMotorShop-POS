@@ -4,18 +4,20 @@ import {
   BadgeCheck,
   Ban,
   Bike,
-  Edit3,
+  Eye,
   Phone,
   Plus,
   Search,
   UserRound,
   UsersRound,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { toggleClientStatus } from "./actions";
+import ConfirmStatusButton from "./ConfirmStatusButton";
 import styles from "./clients.module.css";
 
 interface ClientRow extends RowDataPacket {
@@ -26,8 +28,20 @@ interface ClientRow extends RowDataPacket {
   remarks: string | null;
   is_active: number;
   motorcycle_count: number;
+  job_order_count: number;
+  sales_count: number;
+  last_activity: Date | string | null;
   created_at: Date | string;
   updated_at: Date | string;
+}
+
+interface SummaryRow extends RowDataPacket {
+  total_clients: number;
+  active_clients: number;
+  inactive_clients: number;
+  with_motorcycles: number;
+  job_order_customers: number;
+  returning_customers: number;
 }
 
 interface ClientsPageProps {
@@ -39,13 +53,10 @@ interface ClientsPageProps {
   }>;
 }
 
-function formatDate(value: Date | string): string {
+function formatDate(value: Date | string | null): string {
+  if (!value) return "—";
   const date = value instanceof Date ? value : new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
-
+  if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
     year: "numeric",
@@ -54,45 +65,52 @@ function formatDate(value: Date | string): string {
   }).format(date);
 }
 
+function formatDateTime(value: Date | string | null): string {
+  if (!value) return "—";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export default async function ClientsPage({
   searchParams,
 }: ClientsPageProps) {
   const user = await getCurrentUser();
 
-  if (!user) {
-    redirect("/");
-  }
-
-  if (
-    user.role !== "ADMIN" &&
-    user.role !== "OWNER" &&
-    user.role !== "CASHIER"
-  ) {
+  if (!user) redirect("/");
+  if (!["ADMIN", "OWNER", "CASHIER"].includes(user.role)) {
     redirect("/dashboard");
   }
 
   const parameters = await searchParams;
-
   const search = parameters.search?.trim() ?? "";
-  const status =
-    parameters.status?.trim().toUpperCase() ?? "ALL";
+  const status = parameters.status?.trim().toUpperCase() ?? "ALL";
 
   const conditions: string[] = [];
   const values: Array<string | number> = [];
 
   if (search) {
+    const searchValue = `%${search}%`;
     conditions.push(`
       (
         c.client_code LIKE ?
         OR c.client_name LIKE ?
         OR c.mobile_number LIKE ?
         OR c.remarks LIKE ?
+        OR m.plate_number LIKE ?
+        OR mm.model_name LIKE ?
       )
     `);
-
-    const searchValue = `%${search}%`;
-
     values.push(
+      searchValue,
+      searchValue,
       searchValue,
       searchValue,
       searchValue,
@@ -100,91 +118,131 @@ export default async function ClientsPage({
     );
   }
 
-  if (status === "ACTIVE") {
-    conditions.push("c.is_active = 1");
-  }
+  if (status === "ACTIVE") conditions.push("c.is_active = 1");
+  if (status === "INACTIVE") conditions.push("c.is_active = 0");
 
-  if (status === "INACTIVE") {
-    conditions.push("c.is_active = 0");
-  }
+  const whereClause = conditions.length
+    ? `WHERE ${conditions.join(" AND ")}`
+    : "";
 
-  const whereClause =
-    conditions.length > 0
-      ? `WHERE ${conditions.join(" AND ")}`
-      : "";
+  const [clientsResult, summaryResult] = await Promise.all([
+    pool.query<ClientRow[]>(
+      `
+        SELECT
+          c.id,
+          c.client_code,
+          c.client_name,
+          c.mobile_number,
+          c.remarks,
+          c.is_active,
+          c.created_at,
+          c.updated_at,
+          COUNT(DISTINCT m.id) AS motorcycle_count,
+          COUNT(DISTINCT jo.id) AS job_order_count,
+          COUNT(DISTINCT s.id) AS sales_count,
+          MAX(
+            GREATEST(
+              COALESCE(jo.date_received, '1000-01-01'),
+              COALESCE(s.sale_date, '1000-01-01')
+            )
+          ) AS last_activity
+        FROM clients c
+        LEFT JOIN motorcycles m
+          ON m.client_id = c.id
+        LEFT JOIN motorcycle_models mm
+          ON mm.id = m.model_id
+        LEFT JOIN job_orders jo
+          ON jo.client_id = c.id
+        LEFT JOIN sales s
+          ON s.client_id = c.id
+        ${whereClause}
+        GROUP BY
+          c.id,
+          c.client_code,
+          c.client_name,
+          c.mobile_number,
+          c.remarks,
+          c.is_active,
+          c.created_at,
+          c.updated_at
+        ORDER BY
+          c.is_active DESC,
+          last_activity DESC,
+          c.client_name ASC
+      `,
+      values,
+    ),
+    pool.query<SummaryRow[]>(
+      `
+        SELECT
+          COUNT(*) AS total_clients,
+          SUM(c.is_active = 1) AS active_clients,
+          SUM(c.is_active = 0) AS inactive_clients,
+          COUNT(DISTINCT CASE WHEN m.id IS NOT NULL THEN c.id END) AS with_motorcycles,
+          COUNT(DISTINCT CASE WHEN jo.id IS NOT NULL THEN c.id END) AS job_order_customers,
+          COUNT(
+            DISTINCT CASE
+              WHEN activity.activity_count >= 2 THEN c.id
+            END
+          ) AS returning_customers
+        FROM clients c
+        LEFT JOIN motorcycles m
+          ON m.client_id = c.id
+        LEFT JOIN job_orders jo
+          ON jo.client_id = c.id
+        LEFT JOIN (
+          SELECT
+            client_id,
+            COUNT(*) AS activity_count
+          FROM (
+            SELECT client_id, id FROM job_orders WHERE client_id IS NOT NULL
+            UNION ALL
+            SELECT client_id, id FROM sales WHERE client_id IS NOT NULL
+          ) activity_rows
+          GROUP BY client_id
+        ) activity
+          ON activity.client_id = c.id
+      `,
+    ),
+  ]);
 
-  const [clients] = await pool.query<ClientRow[]>(
-  `
-    SELECT
-      c.id,
-      c.client_code,
-      c.client_name,
-      c.mobile_number,
-      c.remarks,
-      c.is_active,
-      c.created_at,
-      c.updated_at,
-      COUNT(m.id) AS motorcycle_count
-    FROM clients c
-    LEFT JOIN motorcycles m
-      ON m.client_id = c.id
-    ${whereClause}
-    GROUP BY
-      c.id,
-      c.client_code,
-      c.client_name,
-      c.mobile_number,
-      c.remarks,
-      c.is_active,
-      c.created_at,
-      c.updated_at
-    ORDER BY
-      c.is_active DESC,
-      c.client_name ASC
-  `,
-  values,
-);
-
-  const activeCount = clients.filter(
-    (client) => client.is_active === 1,
-  ).length;
-
-  const inactiveCount = clients.length - activeCount;
-
-  const clientsWithMobile = clients.filter(
-    (client) => Boolean(client.mobile_number),
-  ).length;
+  const clients = clientsResult[0];
+  const summary = summaryResult[0][0] ?? {
+    total_clients: 0,
+    active_clients: 0,
+    inactive_clients: 0,
+    with_motorcycles: 0,
+    job_order_customers: 0,
+    returning_customers: 0,
+  };
 
   return (
     <main className={styles.page}>
       <header className={styles.hero}>
         <div>
-          <Link
-            href="/dashboard"
-            className={styles.backButton}
-          >
-            <ArrowLeft size={19} />
+          <Link href="/dashboard" className={styles.backButton}>
+            <ArrowLeft size={17} />
             Dashboard
           </Link>
 
           <div className={styles.titleBlock}>
             <div className={styles.titleIcon}>
-              <UsersRound size={28} />
+              <UsersRound size={27} />
             </div>
 
             <div>
               <p>Customer Management</p>
               <h1>Clients</h1>
               <span>
-                Manage customer names and contact information for
-                retail sales and job orders.
+                Manage customers, motorcycles, workshop history, and retail
+                transactions in one place.
               </span>
             </div>
           </div>
         </div>
 
         <Link href="/clients/new" className={styles.addButton}>
-          <Plus size={20} />
+          <Plus size={19} />
           Add Client
         </Link>
       </header>
@@ -192,53 +250,75 @@ export default async function ClientsPage({
       <section className={styles.content}>
         {parameters.success ? (
           <div className={styles.successMessage}>
-            <BadgeCheck size={20} />
+            <BadgeCheck size={19} />
             {parameters.success}
           </div>
         ) : null}
 
         {parameters.error ? (
           <div className={styles.errorMessage}>
-            <Ban size={20} />
+            <Ban size={19} />
             {parameters.error}
           </div>
         ) : null}
 
-        <div className={styles.summaryGrid}>
+        <section className={styles.summaryGrid}>
           <article>
-            <div className={styles.summaryIcon}>
-              <UsersRound size={23} />
-            </div>
-
+            <div className={styles.summaryIcon}><UsersRound size={21} /></div>
             <div>
               <span>Total Clients</span>
-              <strong>{clients.length}</strong>
+              <strong>{Number(summary.total_clients)}</strong>
+              <small>{Number(summary.active_clients)} active</small>
             </div>
           </article>
 
           <article>
-            <div className={styles.summaryIcon}>
-              <BadgeCheck size={23} />
-            </div>
-
+            <div className={styles.summaryIcon}><BadgeCheck size={21} /></div>
             <div>
               <span>Active Clients</span>
-              <strong>{activeCount}</strong>
-              <small>{inactiveCount} inactive</small>
+              <strong>{Number(summary.active_clients)}</strong>
+              <small>{Number(summary.inactive_clients)} inactive</small>
             </div>
           </article>
 
           <article>
-            <div className={styles.summaryIcon}>
-              <Phone size={23} />
-            </div>
-
+            <div className={styles.summaryIcon}><Bike size={21} /></div>
             <div>
-              <span>With Mobile Number</span>
-              <strong>{clientsWithMobile}</strong>
+              <span>With Motorcycles</span>
+              <strong>{Number(summary.with_motorcycles)}</strong>
+              <small>Registered motorcycle owners</small>
             </div>
           </article>
-        </div>
+
+          <article>
+            <div className={styles.summaryIcon}><Wrench size={21} /></div>
+            <div>
+              <span>Job Order Customers</span>
+              <strong>{Number(summary.job_order_customers)}</strong>
+              <small>Customers with workshop history</small>
+            </div>
+          </article>
+
+          <article>
+            <div className={styles.summaryIcon}><UserRound size={21} /></div>
+            <div>
+              <span>Returning Customers</span>
+              <strong>{Number(summary.returning_customers)}</strong>
+              <small>2 or more sales / job orders</small>
+            </div>
+          </article>
+
+          <article>
+            <div className={styles.summaryIcon}><Phone size={21} /></div>
+            <div>
+              <span>With Mobile Number</span>
+              <strong>
+                {clients.filter((client) => Boolean(client.mobile_number)).length}
+              </strong>
+              <small>Among current results</small>
+            </div>
+          </article>
+        </section>
 
         <section className={styles.panel}>
           <header className={styles.panelHeader}>
@@ -246,21 +326,19 @@ export default async function ClientsPage({
               <p>Client Directory</p>
               <h2>Registered clients</h2>
             </div>
-
             <span>
-              Search using the client name or mobile number.
+              Search by client, mobile, plate number, or motorcycle model.
             </span>
           </header>
 
           <form method="get" className={styles.filters}>
             <label className={styles.searchField}>
-              <Search size={19} />
-
+              <Search size={18} />
               <input
                 type="search"
                 name="search"
                 defaultValue={search}
-                placeholder="Search client code, name, mobile, or remarks"
+                placeholder="Search name, code, mobile, plate number, model, or remarks"
               />
             </label>
 
@@ -271,22 +349,28 @@ export default async function ClientsPage({
             </select>
 
             <button type="submit">Search</button>
-
             <Link href="/clients">Clear</Link>
           </form>
 
+          <div className={styles.resultsBar}>
+            <span>
+              Showing <strong>{clients.length}</strong>{" "}
+              {clients.length === 1 ? "client" : "clients"}
+            </span>
+            <span>
+              {status === "ALL" ? "All statuses" : status === "ACTIVE" ? "Active clients" : "Inactive clients"}
+            </span>
+          </div>
+
           {clients.length === 0 ? (
             <div className={styles.emptyState}>
-              <UsersRound size={48} />
-
+              <UsersRound size={45} />
               <strong>No clients found</strong>
-
               <span>
-                Add a client or change the current search filters.
+                Try another search or add a new client to the directory.
               </span>
-
               <Link href="/clients/new">
-                <Plus size={19} />
+                <Plus size={18} />
                 Add Client
               </Link>
             </div>
@@ -297,47 +381,43 @@ export default async function ClientsPage({
                   <tr>
                     <th>Code</th>
                     <th>Client</th>
-                    <th>Mobile Number</th>
-                    <th>Remarks</th>
+                    <th>Mobile</th>
                     <th>Motorcycles</th>
+                    <th>Workshop</th>
+                    <th>Sales</th>
+                    <th>Last Visit</th>
                     <th>Status</th>
-                    <th>Updated</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {clients.map((client) => {
-                    const statusAction =
-                      toggleClientStatus.bind(
-                        null,
-                        client.id,
-                        client.is_active === 1 ? 0 : 1,
-                      );
+                    const statusAction = toggleClientStatus.bind(
+                      null,
+                      client.id,
+                      client.is_active === 1 ? 0 : 1,
+                    );
 
                     return (
                       <tr key={client.id}>
                         <td>
-                          <span className={styles.code}>
-                            {client.client_code}
-                          </span>
+                          <span className={styles.code}>{client.client_code}</span>
                         </td>
 
                         <td>
                           <div className={styles.clientCell}>
                             <div className={styles.avatar}>
-                              <UserRound size={18} />
+                              <UserRound size={17} />
                             </div>
-
                             <div>
-                              <strong>
+                              <Link
+                                href={`/clients/${client.id}/view`}
+                                className={styles.clientName}
+                              >
                                 {client.client_name}
-                              </strong>
-
-                              <span>
-                                Created{" "}
-                                {formatDate(client.created_at)}
-                              </span>
+                              </Link>
+                              <span>Created {formatDate(client.created_at)}</span>
                             </div>
                           </div>
                         </td>
@@ -345,28 +425,46 @@ export default async function ClientsPage({
                         <td>
                           {client.mobile_number ? (
                             <span className={styles.mobileNumber}>
-                              <Phone size={14} />
+                              <Phone size={13} />
                               {client.mobile_number}
                             </span>
                           ) : (
-                            <span className={styles.noValue}>
-                              No mobile number
-                            </span>
+                            <span className={styles.noValue}>No mobile</span>
                           )}
                         </td>
 
                         <td>
-                          <p className={styles.remarks}>
-                            {client.remarks ||
-                              "No remarks provided."}
-                          </p>
+                          <Link
+                            href={`/clients/${client.id}/view#motorcycles`}
+                            className={styles.motorcycleCount}
+                          >
+                            <Bike size={13} />
+                            {Number(client.motorcycle_count)}
+                          </Link>
                         </td>
 
                         <td>
-                          <span className={styles.motorcycleCount}>
-                            <Bike size={14} />
-                            {client.motorcycle_count}
+                          <span className={styles.historyValue}>
+                            <Wrench size={13} />
+                            {Number(client.job_order_count)}
                           </span>
+                        </td>
+
+                        <td>
+                          <span className={styles.historyValue}>
+                            {Number(client.sales_count)}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div className={styles.lastVisit}>
+                            <strong>{formatDate(client.last_activity)}</strong>
+                            <small>
+                              {client.last_activity
+                                ? formatDateTime(client.last_activity).split(", ").slice(-1)[0]
+                                : "No activity yet"}
+                            </small>
+                          </div>
                         </td>
 
                         <td>
@@ -377,37 +475,32 @@ export default async function ClientsPage({
                                 : styles.inactiveBadge
                             }
                           >
-                            {client.is_active === 1
-                              ? "Active"
-                              : "Inactive"}
+                            {client.is_active === 1 ? "Active" : "Inactive"}
                           </span>
                         </td>
-
-                        <td>{formatDate(client.updated_at)}</td>
 
                         <td>
                           <div className={styles.rowActions}>
                             <Link
+                              href={`/clients/${client.id}/view`}
+                              className={styles.viewButton}
+                            >
+                              <Eye size={15} />
+                              View
+                            </Link>
+
+                            <Link
                               href={`/clients/${client.id}`}
                               className={styles.editButton}
                             >
-                              <Edit3 size={17} />
                               Edit
                             </Link>
 
                             <form action={statusAction}>
-                              <button
-                                type="submit"
-                                className={
-                                  client.is_active === 1
-                                    ? styles.deactivateButton
-                                    : styles.activateButton
-                                }
-                              >
-                                {client.is_active === 1
-                                  ? "Deactivate"
-                                  : "Activate"}
-                              </button>
+                              <ConfirmStatusButton
+                                active={client.is_active === 1}
+                                clientName={client.client_name}
+                              />
                             </form>
                           </div>
                         </td>

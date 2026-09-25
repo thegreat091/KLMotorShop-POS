@@ -8,6 +8,7 @@ import {
   Edit3,
   PackageSearch,
   Plus,
+  QrCode,
   Search,
   Tags,
 } from "lucide-react";
@@ -66,6 +67,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   if (!canViewProducts) redirect("/dashboard");
 
   const canManageProducts = user.role === "ADMIN" || user.role === "INVENTORY";
+  const canPrintQrLabels = user.role === "ADMIN" || user.role === "INVENTORY" || user.role === "OWNER";
   const parameters = await searchParams;
   const search = parameters.search?.trim() ?? "";
   const status = parameters.status?.trim().toUpperCase() ?? "ALL";
@@ -144,18 +146,25 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </div>
         </div>
 
-        {canManageProducts ? (
-          <div style={{display:"flex",gap:"10px"}}>
-            <Link href="/inventory/initial-inventory" className={styles.addButton}>
-              <Boxes size={19} /> Initial Inventory
+        <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
+          {canPrintQrLabels ? (
+            <Link href="/inventory/qr-labels" className={styles.addButton}>
+              <QrCode size={19} /> QR Labels
             </Link>
-            <Link href="/products/new" className={styles.addButton}>
-              <Plus size={19} /> Add Product
-            </Link>
-          </div>
-        ) : (
-          <span className={styles.viewOnlyBadge}>View only</span>
-        )}
+          ) : null}
+          {canManageProducts ? (
+            <>
+              <Link href="/inventory/initial-inventory" className={styles.addButton}>
+                <Boxes size={19} /> Initial Inventory
+              </Link>
+              <Link href="/products/new" className={styles.addButton}>
+                <Plus size={19} /> Add Product
+              </Link>
+            </>
+          ) : (
+            <span className={styles.viewOnlyBadge}>View only</span>
+          )}
+        </div>
       </header>
 
       <section className={styles.content}>

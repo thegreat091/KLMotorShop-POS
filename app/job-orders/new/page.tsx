@@ -24,6 +24,11 @@ interface MechanicRow extends RowDataPacket {
   full_name: string;
 }
 
+interface ModelRow extends RowDataPacket {
+  id: number;
+  model_name: string;
+}
+
 export default async function NewJobOrderPage({
   searchParams,
 }: {
@@ -53,6 +58,13 @@ export default async function NewJobOrderPage({
       ON mm.id = m.model_id
     WHERE m.is_active = 1
     ORDER BY m.plate_number
+  `);
+
+  const [models] = await pool.query<ModelRow[]>(`
+    SELECT id, model_name
+    FROM motorcycle_models
+    WHERE is_active = 1
+    ORDER BY model_name
   `);
 
   const [mechanics] = await pool.query<MechanicRow[]>(`
@@ -96,6 +108,7 @@ export default async function NewJobOrderPage({
           plate_number: motorcycle.plate_number,
           model_name: motorcycle.model_name,
         }))}
+        models={models.map((model) => ({ id: model.id, model_name: model.model_name }))}
         mechanics={mechanics.map((mechanic) => ({
           id: mechanic.id,
           full_name: mechanic.full_name,

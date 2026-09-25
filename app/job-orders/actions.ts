@@ -57,6 +57,78 @@ async function logActivity(user: { id: number; fullName: string; role: string },
     VALUES (?,?,?,?,?,?,?)`, [user.id,user.fullName,user.role,action,"Job Orders","job_orders",String(id)]);
 }
 
+
+interface InlineMotorcycleRow extends RowDataPacket { id: number; }
+interface InlineMotorcycleResult {
+  ok: boolean;
+  message: string;
+  motorcycle?: { id: number; client_id: number; plate_number: string; model_name: string };
+}
+
+export async function createMotorcycleFromJobOrder(input: {
+  clientId: number;
+  modelId: number;
+  plateNumber: string;
+  remarks?: string;
+}): Promise<InlineMotorcycleResult> {
+  const user = await requireJobOrderEditor();
+  const clientId = Number(input.clientId);
+  const modelId = Number(input.modelId);
+  const plateNumber = String(input.plateNumber ?? "").trim().toUpperCase().replace(/\s+/g, " ");
+  const remarks = String(input.remarks ?? "").trim();
+
+  if (!Number.isInteger(clientId) || clientId <= 0) return { ok: false, message: "Select a client first." };
+  if (!Number.isInteger(modelId) || modelId <= 0) return { ok: false, message: "Select a motorcycle model." };
+  if (!plateNumber) return { ok: false, message: "Plate number is required." };
+  if (plateNumber.length > 50) return { ok: false, message: "Plate number must not exceed 50 characters." };
+
+  const [clients] = await pool.execute<InlineMotorcycleRow[]>(
+    `SELECT id FROM clients WHERE id=? AND is_active=1 LIMIT 1`, [clientId]
+  );
+  if (!clients[0]) return { ok: false, message: "The selected client is unavailable or inactive." };
+
+  const [models] = await pool.execute<(RowDataPacket & { id:number; model_name:string })[]>(
+    `SELECT id,model_name FROM motorcycle_models WHERE id=? AND is_active=1 LIMIT 1`, [modelId]
+  );
+  if (!models[0]) return { ok: false, message: "The selected motorcycle model is unavailable or inactive." };
+
+  const [existing] = await pool.execute<InlineMotorcycleRow[]>(
+    `SELECT id FROM motorcycles WHERE UPPER(plate_number)=UPPER(?) LIMIT 1`, [plateNumber]
+  );
+  if (existing[0]) return { ok: false, message: "A motorcycle with this plate number already exists." };
+
+  const [nextRows] = await pool.query<(RowDataPacket & { next_number:number })[]>(`
+    SELECT COALESCE(MAX(CAST(SUBSTRING(motorcycle_code,6) AS UNSIGNED)),0)+1 AS next_number
+    FROM motorcycles WHERE motorcycle_code LIKE 'BIKE-%'
+  `);
+  const motorcycleCode = `BIKE-${String(Number(nextRows[0]?.next_number ?? 1)).padStart(6,"0")}`;
+
+  try {
+    const [result] = await pool.execute<ResultSetHeader>(`
+      INSERT INTO motorcycles
+        (motorcycle_code,client_id,model_id,plate_number,remarks,is_active,created_by,updated_by)
+      VALUES (?,?,?,?,?,1,?,?)
+    `,[motorcycleCode,clientId,modelId,plateNumber,remarks || null,user.id,user.id]);
+
+    await pool.execute(`INSERT INTO activity_logs
+      (user_id,user_name,user_role,action,module,reference_table,reference_id)
+      VALUES (?,?,?,?,?,?,?)`,[user.id,user.fullName,user.role,`Created motorcycle ${motorcycleCode} - ${plateNumber} from Job Order.`,"Motorcycles","motorcycles",String(result.insertId)]);
+
+    revalidatePath("/motorcycles");
+    revalidatePath("/clients");
+    revalidatePath("/job-orders/new");
+
+    return {
+      ok: true,
+      message: "Motorcycle added successfully.",
+      motorcycle: { id: result.insertId, client_id: clientId, plate_number: plateNumber, model_name: String(models[0].model_name) },
+    };
+  } catch (error) {
+    console.error("Unable to add motorcycle from job order", error);
+    return { ok: false, message: "Unable to save the motorcycle. Please try again." };
+  }
+}
+
 export async function createJobOrder(fd: FormData) {
   const user = await requireJobOrderEditor();
   const clientId = numberValue(fd,"client_id");

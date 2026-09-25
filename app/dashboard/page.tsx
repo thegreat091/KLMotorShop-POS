@@ -16,6 +16,7 @@ import {
   PackagePlus,
   PackageX,
   ReceiptText,
+  QrCode,
   PiggyBank,
   Landmark,
   Settings2,
@@ -467,6 +468,7 @@ export default async function DashboardPage() {
             <div className={styles.navSection}>
               <span className={styles.navSectionLabel}>Inventory</span>
               <Link href="/products"><PackageSearch size={20} />Products</Link>
+              {(canManageInventory || user.role === "OWNER") ? <Link href="/inventory/qr-labels"><QrCode size={20} />QR Labels</Link> : null}
               {canManageInventory ? <Link href="/inventory/stock-in"><PackagePlus size={20} />Stock In</Link> : null}
               {canManageInventory ? <Link href="/inventory/stock-adjustments"><ClipboardPenLine size={20} />Stock Out / Adjustments</Link> : null}
               {(canManageInventory || user.role === "OWNER") ? <Link href="/inventory/ledger"><Activity size={20} />Inventory Ledger</Link> : null}

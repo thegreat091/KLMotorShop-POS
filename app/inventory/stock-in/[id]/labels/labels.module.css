@@ -1,6 +1,6 @@
 .page{
   min-height:100vh;
-  background:#eef1f4;
+  background:#f4f6f8;
   padding:20px;
 }
 
@@ -48,73 +48,61 @@
   color:#6b7280;
 }
 
-.sheet{
-  max-width:1100px;
-  margin:0 auto;
+.pages{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+}
+
+.printPage{
+  box-sizing:border-box;
+  width:210mm;
+  height:297mm;
+  background:#fff;
+  padding:7mm 5mm 10mm;
+  box-shadow:0 3px 16px #0002;
+  position:relative;
+  overflow:hidden;
+}
+
+.grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill, 50.8mm);
-  gap:8px;
-  justify-content:center;
+  grid-template-columns:repeat(5,40mm);
+  grid-auto-rows:21mm;
+  gap:0;
 }
 
 .label{
   box-sizing:border-box;
-  width:50.8mm;
-  height:25.4mm;
-  background:#fff;
-  border:1px dashed #9ca3af;
-  border-radius:3px;
-  padding:1.1mm 1.4mm;
-  break-inside:avoid;
-  display:grid;
-  grid-template-columns:17mm 1fr;
-  grid-template-rows:auto auto 1fr auto;
-  column-gap:1.4mm;
+  width:40mm;
+  height:21mm;
+  border:1px dashed #bbb;
+  padding:1.2mm 1.4mm;
   overflow:hidden;
+  background:#fff;
+  break-inside:avoid;
 }
 
 .shop{
-  grid-column:1 / -1;
-  text-align:center;
-  font-size:6pt;
+  font-size:5pt;
   line-height:1;
   font-weight:900;
-  letter-spacing:.06em;
-  margin-bottom:.5mm;
+  letter-spacing:.03em;
+  height:2.4mm;
+  white-space:nowrap;
 }
 
-.name{
-  grid-column:2;
-  grid-row:2;
-  align-self:end;
-  font-weight:900;
-  font-size:7pt;
-  line-height:1.05;
-  max-height:7.4mm;
-  overflow:hidden;
+.labelBody{
+  display:flex;
+  gap:1.2mm;
+  align-items:center;
 }
 
-.price{
-  grid-column:2;
-  grid-row:3;
-  align-self:start;
-  margin-top:.7mm;
-  font-size:9pt;
-  line-height:1;
-  font-weight:900;
-}
-
-/*
- * QR is printed as a true square and never stretched.
- * The QR component includes its own white quiet zone for reliable scanning.
- */
 .qr{
-  grid-column:1;
-  grid-row:2 / 5;
-  width:16.5mm;
-  height:16.5mm;
-  align-self:center;
-  justify-self:center;
+  width:12.5mm;
+  height:12.5mm;
+  flex:0 0 12.5mm;
   background:#fff;
 }
 
@@ -125,34 +113,49 @@
   shape-rendering:crispEdges;
 }
 
-.code{
-  grid-column:2;
-  grid-row:3;
-  align-self:end;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:5.3pt;
-  line-height:1;
-  font-weight:800;
-  white-space:nowrap;
+.info{min-width:0}
+
+.name{
+  font-size:6pt;
+  font-weight:900;
+  line-height:1.05;
+  max-height:12.6pt;
   overflow:hidden;
-  text-overflow:ellipsis;
-  margin-bottom:.6mm;
 }
 
-.meta{
-  grid-column:2;
-  grid-row:4;
-  font-size:4.6pt;
+.price{
+  font-size:7.5pt;
   line-height:1;
-  color:#444;
+  font-weight:900;
+  margin-top:.35mm;
+}
+
+.code,
+.batch{
+  font-size:4.5pt;
+  line-height:1.05;
+  margin-top:.25mm;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+}
+
+.code{font-weight:800}
+.batch{color:#444}
+
+.pageNo{
+  position:absolute;
+  bottom:3mm;
+  left:0;
+  right:0;
+  text-align:center;
+  font-size:8pt;
+  color:#94a3b8;
 }
 
 @page{
-  size:Letter portrait;
-  margin:5mm;
+  size:A4 portrait;
+  margin:0;
 }
 
 @media print{
@@ -169,33 +172,32 @@
     background:#fff;
   }
 
-  .toolbar{display:none}
+  .toolbar{display:none!important}
 
-  .sheet{
-    width:205.6mm;
-    max-width:none;
-    margin:0 auto;
-    display:grid;
-    grid-template-columns:repeat(4, 50.8mm);
-    grid-auto-rows:25.4mm;
-    gap:.8mm;
-    justify-content:start;
-    align-content:start;
+  .pages{
+    margin:0;
+    display:block;
+  }
+
+  .printPage{
+    box-shadow:none;
+    margin:0;
+    width:210mm;
+    height:297mm;
+    break-after:page;
+    page-break-after:always;
+  }
+
+  .printPage:last-child{
+    break-after:auto;
+    page-break-after:auto;
   }
 
   .label{
-    width:50.8mm;
-    height:25.4mm;
-    min-height:0;
-    padding:1.1mm 1.4mm;
-    border:.15mm solid #bbb;
-    border-radius:0;
-    page-break-inside:avoid;
+    border:.25mm dashed #777!important;
     break-inside:avoid;
+    page-break-inside:avoid;
   }
 
-  .qr{
-    width:16.5mm;
-    height:16.5mm;
-  }
+  .pageNo{display:none}
 }

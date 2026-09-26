@@ -250,7 +250,7 @@ export default async function ServicesPage({
             </div>
 
             <div>
-              <span>Average Service Charge</span>
+              <span>Average Suggested Charge</span>
               <strong>
                 {formatCurrency(averageServiceCharge)}
               </strong>
@@ -314,7 +314,7 @@ export default async function ServicesPage({
                   <tr>
                     <th>Code</th>
                     <th>Service</th>
-                    <th>Charge</th>
+                    <th>Suggested Charge</th>
                     <th>Owner</th>
                     <th>Mechanic</th>
                     <th>Estimated Time</th>

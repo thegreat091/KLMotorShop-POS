@@ -48,7 +48,7 @@ export default async function NewServicePage({
             <p>Service Management</p>
             <h1>Add Service</h1>
             <span>
-              Create a fixed-price labor service and configure its
+              Create a labor service with a suggested price and configure its
               owner-mechanic allocation.
             </span>
           </div>

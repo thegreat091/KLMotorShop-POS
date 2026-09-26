@@ -383,3 +383,29 @@
 .primaryButton {
   background: var(--module-accent);
 }
+
+/* ===== Unified KL Motor Shop A4 printable report ===== */
+@page { size:A4 portrait; margin:10mm 9mm 12mm; }
+@media print {
+  .page { background:#fff !important; color:#111 !important; padding:0 !important; }
+  .toolbar, .filters { display:none !important; }
+  .report { width:100% !important; max-width:none !important; margin:0 !important; }
+  .header { background:#fff !important; color:#111 !important; border:0 !important; border-bottom:2px solid #111 !important; border-radius:0 !important; padding:0 0 7mm !important; margin:0 0 5mm !important; box-shadow:none !important; }
+  .header h1 { color:#111 !important; font-size:20pt !important; line-height:1.1 !important; margin:1mm 0 !important; }
+  .header p { color:#444 !important; font-size:8.5pt !important; }
+  .eyebrow { color:#111 !important; font-size:8pt !important; letter-spacing:.12em !important; }
+  .kpis { grid-template-columns:repeat(3,1fr) !important; gap:2mm !important; margin-bottom:4mm !important; }
+  .kpis article { border:1px solid #aaa !important; border-radius:0 !important; padding:2.5mm !important; background:#fff !important; box-shadow:none !important; break-inside:avoid; }
+  .twoCols { gap:3mm !important; margin-bottom:4mm !important; align-items:start !important; }
+  .panel { border:1px solid #aaa !important; border-radius:0 !important; padding:3mm !important; margin-bottom:4mm !important; background:#fff !important; box-shadow:none !important; overflow:visible !important; break-inside:auto !important; }
+  .twoCols > .panel { break-inside:avoid !important; }
+  .tableWrap, .smallTableWrap { overflow:visible !important; }
+  .panel table { width:100% !important; border-collapse:collapse !important; font-size:7.3pt !important; }
+  .panel thead { display:table-header-group !important; }
+  .panel tr { break-inside:avoid !important; page-break-inside:avoid !important; }
+  .panel th { background:#eee !important; color:#111 !important; font-size:6.8pt !important; border:1px solid #999 !important; padding:1.6mm 1.3mm !important; white-space:normal !important; }
+  .panel td { color:#111 !important; border:1px solid #bbb !important; padding:1.5mm 1.3mm !important; white-space:normal !important; vertical-align:top !important; }
+  .panel td small { color:#555 !important; font-size:6.5pt !important; }
+  .num { text-align:right !important; white-space:nowrap !important; }
+  .ok, .low, .out { background:#fff !important; color:#111 !important; border:1px solid #999 !important; border-radius:0 !important; padding:1mm !important; }
+}

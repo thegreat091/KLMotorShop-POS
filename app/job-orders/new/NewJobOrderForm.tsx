@@ -2,8 +2,8 @@
 
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { Bike, Plus, X } from "lucide-react";
-import { createJobOrder, createMotorcycleFromJobOrder } from "../actions";
+import { Bike, Plus, UserPlus, X } from "lucide-react";
+import { createClientFromJobOrder, createJobOrder, createMotorcycleFromJobOrder } from "../actions";
 import styles from "../job-orders.module.css";
 
 type ClientOption = { id: number; client_name: string };
@@ -18,6 +18,13 @@ export default function NewJobOrderForm({ clients, motorcycles, mechanics, model
   models: ModelOption[];
 }) {
   const [clientId, setClientId] = useState("");
+  const [clientOptions, setClientOptions] = useState(clients);
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [clientRemarks, setClientRemarks] = useState("");
+  const [clientModalError, setClientModalError] = useState("");
+  const [isSavingClient, startSavingClient] = useTransition();
   const [motorcycleId, setMotorcycleId] = useState("");
   const [motorcycleOptions, setMotorcycleOptions] = useState(motorcycles);
   const [showAddMotorcycle, setShowAddMotorcycle] = useState(false);
@@ -36,6 +43,26 @@ export default function NewJobOrderForm({ clients, motorcycles, mechanics, model
     setClientId(value);
     setMotorcycleId("");
     setShowAddMotorcycle(false);
+  }
+
+  function openClientDialog() {
+    setClientName(""); setMobileNumber(""); setClientRemarks(""); setClientModalError("");
+    setShowAddClient(true);
+  }
+
+  function saveClient(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setClientModalError("");
+    startSavingClient(async () => {
+      const result = await createClientFromJobOrder({ clientName, mobileNumber, remarks: clientRemarks });
+      if (!result.ok || !result.client) { setClientModalError(result.message); return; }
+      setClientOptions((current) => [...current, result.client!].sort((a,b) => a.client_name.localeCompare(b.client_name)));
+      setClientId(String(result.client.id));
+      setMotorcycleId("");
+      setShowAddClient(false);
+      setPlateNumber(""); setModelId(""); setMotorcycleRemarks(""); setModalError("");
+      setShowAddMotorcycle(true);
+    });
   }
 
   function openMotorcycleDialog() {
@@ -58,21 +85,26 @@ export default function NewJobOrderForm({ clients, motorcycles, mechanics, model
     });
   }
 
-  const selectedClient = clients.find((c) => c.id === Number(clientId));
+  const selectedClient = clientOptions.find((c) => c.id === Number(clientId));
 
   return (
     <>
       <form action={createJobOrder} className={styles.card}>
         <h2>Job information</h2>
         <div className={styles.formGrid}>
-          <label className={styles.field}>
+          <div className={styles.field}>
             <span>Client *</span>
-            <select name="client_id" required value={clientId} onChange={(e) => handleClientChange(e.target.value)}>
-              <option value="" disabled>Select client</option>
-              {clients.map((client) => <option key={client.id} value={client.id}>{client.client_name}</option>)}
-            </select>
-            <small>Select the customer receiving the job order.</small>
-          </label>
+            <div className={styles.motorcyclePickerRow}>
+              <select name="client_id" required value={clientId} onChange={(e) => handleClientChange(e.target.value)}>
+                <option value="" disabled>Select client</option>
+                {clientOptions.map((client) => <option key={client.id} value={client.id}>{client.client_name}</option>)}
+              </select>
+              <button type="button" className={styles.addClientButton} onClick={openClientDialog} title="Add a new client without leaving the Job Order">
+                <UserPlus size={17}/> Add Client
+              </button>
+            </div>
+            <small>New customer? Add the client here, then register the motorcycle.</small>
+          </div>
 
           <div className={styles.field}>
             <span>Motorcycle *</span>
@@ -96,6 +128,21 @@ export default function NewJobOrderForm({ clients, motorcycles, mechanics, model
         </div>
         <div className={styles.actions}><Link className={styles.secondary} href="/job-orders">Cancel</Link><button className={styles.primary} type="submit" disabled={!clientId || !motorcycleId}>Create Job Order</button></div>
       </form>
+
+      {showAddClient ? (
+        <div className={styles.modalBackdrop} role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget && !isSavingClient) setShowAddClient(false); }}>
+          <form className={styles.motorcycleModal} onSubmit={saveClient}>
+            <div className={styles.modalHeader}><div className={styles.modalTitle}><span className={styles.modalIcon}><UserPlus size={20}/></span><div><h3>Add New Client</h3><p>Register the customer without leaving the Job Order.</p></div></div><button type="button" className={styles.modalClose} onClick={() => setShowAddClient(false)} disabled={isSavingClient}><X size={20}/></button></div>
+            <div className={styles.modalBody}>
+              {clientModalError ? <div className={styles.error}>{clientModalError}</div> : null}
+              <label className={styles.field}><span>Client Name *</span><input value={clientName} onChange={(e) => setClientName(e.target.value)} maxLength={150} required placeholder="Customer full name" autoFocus /></label>
+              <label className={styles.field}><span>Mobile Number</span><input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} maxLength={50} placeholder="Example: 09XXXXXXXXX" /></label>
+              <label className={styles.field}><span>Remarks</span><textarea value={clientRemarks} onChange={(e) => setClientRemarks(e.target.value)} rows={3} placeholder="Optional client notes" /></label>
+            </div>
+            <div className={styles.modalActions}><button type="button" className={styles.secondary} onClick={() => setShowAddClient(false)} disabled={isSavingClient}>Cancel</button><button type="submit" className={styles.primary} disabled={isSavingClient || !clientName.trim()}>{isSavingClient ? "Saving..." : "Save Client & Add Motorcycle"}</button></div>
+          </form>
+        </div>
+      ) : null}
 
       {showAddMotorcycle ? (
         <div className={styles.modalBackdrop} role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget && !isSavingMotorcycle) setShowAddMotorcycle(false); }}>

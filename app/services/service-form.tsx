@@ -120,7 +120,7 @@ export default function ServiceForm({
         <div className={styles.twoColumns}>
           <label className={styles.field}>
             <span>
-              Fixed Service Charge <strong>*</strong>
+              Suggested Service Charge <strong>*</strong>
             </span>
 
             <input

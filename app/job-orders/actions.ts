@@ -58,6 +58,60 @@ async function logActivity(user: { id: number; fullName: string; role: string },
 }
 
 
+interface InlineClientRow extends RowDataPacket { id: number; }
+interface InlineClientResult {
+  ok: boolean;
+  message: string;
+  client?: { id: number; client_name: string };
+}
+
+export async function createClientFromJobOrder(input: {
+  clientName: string;
+  mobileNumber?: string;
+  remarks?: string;
+}): Promise<InlineClientResult> {
+  const user = await requireJobOrderEditor();
+  const clientName = String(input.clientName ?? "").trim();
+  const mobileNumber = String(input.mobileNumber ?? "").trim();
+  const remarks = String(input.remarks ?? "").trim();
+
+  if (!clientName) return { ok: false, message: "Client name is required." };
+  if (clientName.length > 150) return { ok: false, message: "Client name must not exceed 150 characters." };
+  if (mobileNumber.length > 50) return { ok: false, message: "Mobile number must not exceed 50 characters." };
+
+  if (mobileNumber) {
+    const [existing] = await pool.execute<InlineClientRow[]>(
+      `SELECT id FROM clients WHERE mobile_number=? LIMIT 1`, [mobileNumber]
+    );
+    if (existing[0]) return { ok: false, message: "Another client already uses this mobile number." };
+  }
+
+  const [nextRows] = await pool.query<(RowDataPacket & { next_number:number })[]>(`
+    SELECT COALESCE(MAX(CAST(SUBSTRING(client_code,8) AS UNSIGNED)),0)+1 AS next_number
+    FROM clients WHERE client_code LIKE 'CLIENT-%'
+  `);
+  const clientCode = `CLIENT-${String(Number(nextRows[0]?.next_number ?? 1)).padStart(6,"0")}`;
+
+  try {
+    const [result] = await pool.execute<ResultSetHeader>(`
+      INSERT INTO clients
+        (client_code,client_name,mobile_number,remarks,is_active,created_by,updated_by)
+      VALUES (?,?,?,?,1,?,?)
+    `,[clientCode,clientName,mobileNumber || null,remarks || null,user.id,user.id]);
+
+    await pool.execute(`INSERT INTO activity_logs
+      (user_id,user_name,user_role,action,module,reference_table,reference_id)
+      VALUES (?,?,?,?,?,?,?)`,[user.id,user.fullName,user.role,`Created client ${clientCode} - ${clientName} from Job Order.`,"Clients","clients",String(result.insertId)]);
+
+    revalidatePath("/clients");
+    revalidatePath("/job-orders/new");
+    return { ok: true, message: "Client added successfully.", client: { id: result.insertId, client_name: clientName } };
+  } catch (error) {
+    console.error("Unable to add client from job order", error);
+    return { ok: false, message: "Unable to save the client. Please try again." };
+  }
+}
+
 interface InlineMotorcycleRow extends RowDataPacket { id: number; }
 interface InlineMotorcycleResult {
   ok: boolean;
@@ -201,6 +255,7 @@ export async function addJobOrderService(fd: FormData) {
   const jobOrderId = numberValue(fd,"job_order_id");
   const serviceId = numberValue(fd,"service_id");
   const mechanicIdForm = numberValue(fd,"mechanic_id") || null;
+  const enteredCharge = text(fd,"service_charge");
   if (!jobOrderId || !serviceId) redirect("/job-orders");
 
   const [jobs] = await pool.execute<JobRow[]>(`SELECT id,status,assigned_mechanic_id FROM job_orders WHERE id=? LIMIT 1`,[jobOrderId]);
@@ -209,14 +264,18 @@ export async function addJobOrderService(fd: FormData) {
   const service = services[0];
   if (!service) redirect(url(`/job-orders/${jobOrderId}`,"error","Service not found."));
   const mechanicId = mechanicIdForm || jobs[0].assigned_mechanic_id;
-  const charge = Number(service.service_charge);
+  const suggestedCharge = Number(service.service_charge);
+  const charge = enteredCharge === "" ? suggestedCharge : Number(enteredCharge);
+  if (!Number.isFinite(charge) || charge < 0) {
+    redirect(url(`/job-orders/${jobOrderId}`,"error","Enter a valid service charge."));
+  }
   const ownerPct = Number(service.owner_percentage);
   const mechanicPct = Number(service.mechanic_percentage);
   await pool.execute(`INSERT INTO job_order_services
     (job_order_id,service_id,mechanic_id,service_name,service_charge,owner_percentage,mechanic_percentage,owner_share,mechanic_share,status)
     VALUES (?,?,?,?,?,?,?,?,?,'PENDING')`,
     [jobOrderId,service.id,mechanicId,service.service_name,charge,ownerPct,mechanicPct,charge*ownerPct/100,charge*mechanicPct/100]);
-  await logActivity(user,`Added service ${service.service_name}.`,jobOrderId);
+  await logActivity(user,`Added service ${service.service_name} at actual charge ₱${charge.toFixed(2)} (suggested ₱${suggestedCharge.toFixed(2)}).`,jobOrderId);
   revalidatePath(`/job-orders/${jobOrderId}`);
   redirect(url(`/job-orders/${jobOrderId}`,"success","Service added."));
 }

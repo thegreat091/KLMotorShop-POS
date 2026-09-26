@@ -63,3 +63,37 @@
 .primaryButton {
   background: var(--module-accent);
 }
+
+/* ===== Unified KL Motor Shop A4 printable report ===== */
+@page { size: A4 portrait; margin: 10mm 9mm 12mm; }
+@media print {
+  .page { background:#fff !important; color:#111 !important; padding:0 !important; min-height:auto !important; }
+  .noPrint, .filters, .back { display:none !important; }
+  .reportHeader { border:0 !important; border-bottom:2px solid #111 !important; border-radius:0 !important; padding:0 0 7mm !important; margin:0 0 5mm !important; background:#fff !important; box-shadow:none !important; }
+  .reportHeader h1 { margin:1mm 0 !important; font-size:20pt !important; line-height:1.1 !important; color:#111 !important; }
+  .reportHeader p, .headerMeta, .headerMeta span, .headerMeta small { color:#444 !important; font-size:8.5pt !important; }
+  .eyebrow { color:#111 !important; font-size:8pt !important; letter-spacing:.12em !important; }
+  .metrics { grid-template-columns:repeat(3,1fr) !important; gap:2mm !important; margin:0 0 4mm !important; }
+  .metrics article { border:1px solid #aaa !important; border-radius:0 !important; padding:2.5mm !important; background:#fff !important; box-shadow:none !important; break-inside:avoid; }
+  .metrics svg { display:none !important; }
+  .metrics span { color:#555 !important; font-size:7pt !important; text-transform:uppercase; }
+  .metrics strong { color:#111 !important; font-size:11pt !important; margin-top:1mm !important; }
+  .twoCol { gap:3mm !important; margin-bottom:4mm !important; align-items:start !important; }
+  .panel { border:1px solid #aaa !important; border-radius:0 !important; padding:3mm !important; margin-bottom:4mm !important; background:#fff !important; box-shadow:none !important; overflow:visible !important; break-inside:auto !important; }
+  .twoCol > .panel { break-inside:avoid !important; }
+  .panel header { margin-bottom:2mm !important; border-bottom:1px solid #ccc; padding-bottom:1.5mm; }
+  .panel header h2 { color:#111 !important; font-size:11pt !important; margin:0 !important; }
+  .panel header p, .panel header > span { color:#555 !important; font-size:7pt !important; }
+  .tableWrap { overflow:visible !important; }
+  .tableWrap table { width:100% !important; border-collapse:collapse !important; font-size:7.3pt !important; }
+  .tableWrap thead { display:table-header-group !important; }
+  .tableWrap tfoot { display:table-footer-group !important; }
+  .tableWrap tr { break-inside:avoid !important; page-break-inside:avoid !important; }
+  .tableWrap th { background:#eee !important; color:#111 !important; font-size:6.8pt !important; font-weight:700 !important; text-transform:uppercase; border:1px solid #999 !important; padding:1.6mm 1.3mm !important; white-space:normal !important; }
+  .tableWrap td { color:#111 !important; border:1px solid #bbb !important; padding:1.5mm 1.3mm !important; white-space:normal !important; vertical-align:top !important; }
+  .tableWrap td small { color:#555 !important; font-size:6.5pt !important; }
+  .amount { text-align:right !important; white-space:nowrap !important; }
+  .list > div { padding:1.7mm 0 !important; border-bottom:1px solid #ddd !important; }
+  .list small { color:#555 !important; }
+  .printFooter { border-top:1px solid #bbb; padding-top:2mm; margin-top:5mm !important; color:#555 !important; font-size:7pt !important; }
+}

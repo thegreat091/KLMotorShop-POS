@@ -25,7 +25,7 @@ export default async function NewStockAdjustmentPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "ADMIN" && user.role !== "INVENTORY") redirect("/dashboard");
+  if (user.role !== "OWNER") redirect("/dashboard");
 
   const query = await searchParams;
   const [batches] = await pool.query<BatchRow[]>(

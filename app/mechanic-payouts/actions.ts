@@ -14,6 +14,8 @@ interface EarningRow extends RowDataPacket {
   id: number;
   mechanic_id: number;
   mechanic_share: number;
+  service_amount: number;
+  earning_date: Date | string;
   payout_status: "UNPAID" | "PAID";
   payout_id: number | null;
 }
@@ -54,14 +56,7 @@ async function nextPayoutNumber(connection: PoolConnection) {
   const date =
     `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
 
-  const [rows] = await connection.execute<PayoutNoRow[]>(
-    `
-      SELECT COALESCE(MAX(id), 0) + 1 AS next_no
-      FROM mechanic_payouts
-    `,
-  );
-
-  return `MP-${date}-${String(rows[0]?.next_no ?? 1).padStart(5, "0")}`;
+  return `MP-${date}-${Date.now().toString(36).slice(-6).toUpperCase()}${Math.random().toString(36).slice(2,4).toUpperCase()}`;
 }
 
 export async function payMechanicAction(formData: FormData) {
@@ -107,6 +102,8 @@ export async function payMechanicAction(formData: FormData) {
           id,
           mechanic_id,
           mechanic_share,
+          service_amount,
+          earning_date,
           payout_status,
           payout_id
         FROM mechanic_earnings
@@ -132,10 +129,22 @@ export async function payMechanicAction(formData: FormData) {
       }
     }
 
-    const total = earnings.reduce(
-      (sum, row) => sum + Number(row.mechanic_share),
+    // End-of-day mechanic rule:
+    // Daily gross <= PHP 210: mechanic keeps 100%.
+    // Daily gross > PHP 210: 20% owner deduction, mechanic keeps 80%.
+    // Each calendar day is evaluated independently even when several days are paid together.
+    const dailyGross = new Map<string, number>();
+    for (const row of earnings) {
+      const d = new Date(row.earning_date);
+      const dayKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      dailyGross.set(dayKey, (dailyGross.get(dayKey) ?? 0) + Number(row.service_amount));
+    }
+    const grossTotal = [...dailyGross.values()].reduce((sum, value) => sum + value, 0);
+    const ownerDeduction = [...dailyGross.values()].reduce(
+      (sum, dayGross) => sum + (dayGross > 210 ? dayGross * 0.20 : 0),
       0,
     );
+    const total = Math.round((grossTotal - ownerDeduction) * 100) / 100;
 
     if (total <= 0) {
       throw new Error("Payout total must be greater than zero.");
@@ -200,7 +209,7 @@ export async function payMechanicAction(formData: FormData) {
         [
           payoutId,
           earning.id,
-          Number(earning.mechanic_share).toFixed(2),
+          (Number(earning.service_amount) * (dailyGross.get(`${new Date(earning.earning_date).getFullYear()}-${String(new Date(earning.earning_date).getMonth()+1).padStart(2,"0")}-${String(new Date(earning.earning_date).getDate()).padStart(2,"0")}`)! > 210 ? 0.80 : 1.00)).toFixed(2),
         ],
       );
     }
@@ -344,7 +353,7 @@ export async function payMechanicAction(formData: FormData) {
         user.id,
         user.fullName,
         user.role,
-        `Paid mechanic earnings totaling PHP ${total.toFixed(2)} under ${payoutNumber}; cash advance deduction PHP ${advanceApplied.toFixed(2)}; net payout PHP ${netPayout.toFixed(2)}.`,
+        `Settled mechanic daily gross PHP ${grossTotal.toFixed(2)} under ${payoutNumber}; 20% end-of-day deduction PHP ${ownerDeduction.toFixed(2)}; cash advance deduction PHP ${advanceApplied.toFixed(2)}; net payout PHP ${netPayout.toFixed(2)}.`,
         String(payoutId),
       ],
     );

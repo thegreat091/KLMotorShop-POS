@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import AutoPrint from "./AutoPrint";
-import Barcode39 from "./Barcode39";
+import { QRCodeSVG } from "qrcode.react";
 import PrintButton from "./PrintButton";
 import styles from "./print.module.css";
 
@@ -53,7 +53,7 @@ function Copy({ job, label }: { job: JobPrintRow; label: string }) {
             <span className={styles.value}>{job.job_order_number}</span>
           </div>
           <div className={styles.barcodeBlock}>
-            <Barcode39 value={job.job_order_number} />
+            <QRCodeSVG value={job.job_order_number} size={72} level="M" marginSize={1} />
             <span>{job.job_order_number}</span>
           </div>
         </div>

@@ -17,15 +17,26 @@ interface JobServiceRow extends RowDataPacket { id:number; service_name:string; 
 interface PosPageProps { searchParams: Promise<{ success?:string; error?:string; job_order_id?:string }>; }
 
 export default async function PosPage({ searchParams }: PosPageProps) {
-  const user=await getCurrentUser(); if(!user) redirect("/"); if(!["ADMIN","CASHIER"].includes(user.role)) redirect("/dashboard");
+  const user=await getCurrentUser(); if(!user) redirect("/"); if(!["ADMIN","CASHIER","OWNER"].includes(user.role)) redirect("/dashboard");
   const params=await searchParams;
-  const [products]=await pool.query<ProductRow[]>(`SELECT id,product_code,barcode,product_name,selling_price,quantity_on_hand,unit FROM products WHERE is_active=1 ORDER BY product_name`);
+  const jobId=Number(params.job_order_id||0);
+  const [products]=await pool.query<ProductRow[]>(`
+    SELECT p.id,p.product_code,p.barcode,p.product_name,p.selling_price,
+      GREATEST(0,p.quantity_on_hand-COALESCE(r.reserved_qty,0)) quantity_on_hand,p.unit
+    FROM products p
+    LEFT JOIN (
+      SELECT jp.product_id,SUM(jp.quantity) reserved_qty
+      FROM job_order_parts jp JOIN job_orders jo ON jo.id=jp.job_order_id
+      WHERE jo.status IN ('RECEIVED','INSPECTION','WAITING_PARTS','REPAIRING','READY_FOR_PAYMENT')
+        AND (?=0 OR jo.id<>?)
+      GROUP BY jp.product_id
+    ) r ON r.product_id=p.id
+    WHERE p.is_active=1 ORDER BY p.product_name`,[jobId,jobId]);
   const [batches]=await pool.query<BatchRow[]>(`SELECT id,product_id,batch_number,barcode,quantity_remaining,selling_price,received_at FROM stock_in_batches WHERE status='ACTIVE' AND quantity_remaining>0 ORDER BY received_at,id`);
   const [clients]=await pool.query<ClientRow[]>(`SELECT id,client_name,mobile_number FROM clients WHERE is_active=1 ORDER BY client_name`);
   const [motorcycles]=await pool.query<MotorcycleRow[]>(`SELECT m.id,m.client_id,m.plate_number,mm.model_name FROM motorcycles m JOIN motorcycle_models mm ON mm.id=m.model_id WHERE m.is_active=1 ORDER BY m.plate_number`);
 
   let jobOrder:null|{id:number;job_order_number:string;client_id:number|null;motorcycle_id:number|null;mechanic_name:string|null;parts:JobPartRow[];services:JobServiceRow[]}=null;
-  const jobId=Number(params.job_order_id||0);
   if(Number.isInteger(jobId)&&jobId>0){
     const [jobs]=await pool.execute<JobRow[]>(`SELECT jo.id,jo.job_order_number,jo.client_id,jo.motorcycle_id,jo.status,m.full_name mechanic_name FROM job_orders jo LEFT JOIN mechanics m ON m.id=jo.assigned_mechanic_id WHERE jo.id=? LIMIT 1`,[jobId]);
     const job=jobs[0];

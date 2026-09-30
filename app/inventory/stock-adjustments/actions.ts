@@ -30,7 +30,7 @@ function wholeNumber(value: FormDataEntryValue | null): number {
 async function requireInventoryManager() {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "ADMIN" && user.role !== "INVENTORY") redirect("/dashboard");
+  if (user.role !== "OWNER") redirect("/dashboard");
   return user;
 }
 

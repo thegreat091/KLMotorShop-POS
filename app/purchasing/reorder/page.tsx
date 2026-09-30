@@ -41,7 +41,7 @@ export default async function ReorderPage() {
   `);
 
   return <main className={styles.page}>
-    <div className={styles.topbar}><Link href="/purchasing"><ArrowLeft size={17}/>Purchasing</Link><Link href="/purchasing/purchase-orders/new">Create Purchase Order</Link></div>
+    <div className={styles.topbar}><Link href="/purchasing"><ArrowLeft size={17}/>Purchasing</Link>{user.role === "OWNER" ? <Link href="/purchasing/purchase-orders/new">Create Purchase Order</Link> : null}</div>
     <section className={styles.hero}><div><span>Purchasing</span><h1>Needs Reorder</h1><p>Products whose current stock is at or below the reorder level.</p></div><PackageSearch size={44}/></section>
     <section className={styles.card}>
       <div className={styles.tableWrap}>

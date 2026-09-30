@@ -45,23 +45,15 @@ async function requireReceivingAccess() {
 
   if (!user) redirect("/");
 
-  if (!["ADMIN", "INVENTORY"].includes(user.role)) {
+  if (user.role !== "OWNER") {
     redirect("/purchasing");
   }
 
   return user;
 }
 
-async function nextStockInReference(connection: PoolConnection) {
-  const [rows] = await connection.query<RowDataPacket[]>(
-    `
-      SELECT COALESCE(MAX(id), 0) + 1 AS next_no
-      FROM stock_transactions
-      WHERE transaction_type = 'STOCK_IN'
-    `,
-  );
-
-  return `SI-${codeStamp()}-${String(rows[0]?.next_no ?? 1).padStart(5, "0")}`;
+async function nextStockInReference(_connection: PoolConnection) {
+  return `SI-${codeStamp()}-${Date.now().toString(36).slice(-6).toUpperCase()}${Math.random().toString(36).slice(2,4).toUpperCase()}`;
 }
 
 export async function receivePurchaseOrderAction(formData: FormData) {

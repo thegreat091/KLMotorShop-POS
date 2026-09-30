@@ -14,7 +14,7 @@ export default async function StockInPage({ searchParams }: { searchParams: Prom
   const user = await getCurrentUser();
   if (!user) redirect("/");
   if (!["ADMIN", "INVENTORY", "OWNER"].includes(user.role)) redirect("/dashboard");
-  const canCreate = user.role === "ADMIN" || user.role === "INVENTORY";
+  const canCreate = user.role === "OWNER";
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
   const [rows] = await pool.query<StockInRow[]>(`
@@ -32,7 +32,7 @@ export default async function StockInPage({ searchParams }: { searchParams: Prom
   `, [search, `%${search}%`, `%${search}%`, `%${search}%`]);
 
   return <main className={styles.page}>
-    <header className={styles.hero}><div><Link href="/dashboard" className={styles.backButton}><ArrowLeft size={19}/> Dashboard</Link><div className={styles.titleBlock}><div className={styles.titleIcon}><Truck size={28}/></div><div><p>Inventory</p><h1>Stock In</h1><span>Receive supplier deliveries and print batch barcode labels.</span></div></div></div>{canCreate ? <Link href="/inventory/stock-in/new" className={styles.addButton}><PackagePlus size={19}/> New Stock In</Link> : null}</header>
+    <header className={styles.hero}><div><Link href="/dashboard" className={styles.backButton}><ArrowLeft size={19}/> Dashboard</Link><div className={styles.titleBlock}><div className={styles.titleIcon}><Truck size={28}/></div><div><p>Inventory</p><h1>Stock In</h1><span>Receive supplier deliveries and print batch QR labels.</span></div></div></div>{canCreate ? <Link href="/inventory/stock-in/new" className={styles.addButton}><PackagePlus size={19}/> New Stock In</Link> : null}</header>
     <section className={styles.content}>
       {params.success ? <div className={styles.successMessage}>{params.success}</div> : null}{params.error ? <div className={styles.errorMessage}>{params.error}</div> : null}
       <section className={styles.panel}><header className={styles.panelHeader}><div><p>History</p><h2>Received inventory</h2></div><span>{rows.length} transaction{rows.length===1?"":"s"}</span></header>

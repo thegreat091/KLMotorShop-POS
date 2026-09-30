@@ -61,7 +61,7 @@ async function requireProductViewer() {
 async function requireProductManager() {
   const user = await requireProductViewer();
 
-  if (user.role !== "ADMIN" && user.role !== "INVENTORY") {
+  if (user.role !== "OWNER") {
     redirect("/products");
   }
 
@@ -128,7 +128,7 @@ function validateProduct(parameters: {
     return "Product name must not exceed 180 characters.";
   }
   if (parameters.barcode.length > 100) {
-    return "Barcode must not exceed 100 characters.";
+    return "QR value must not exceed 100 characters.";
   }
   if (!parameters.unit) return "Unit is required.";
   if (parameters.unit.length > 30) {

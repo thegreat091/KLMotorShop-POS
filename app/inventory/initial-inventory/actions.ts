@@ -9,7 +9,7 @@ import { pool } from "@/lib/db";
 type ImportLine = { productId:number; countedQty:number; qrLabels:number };
 interface ProductRow extends RowDataPacket { id:number; product_code:string; product_name:string; barcode:string|null; quantity_on_hand:number; cost_price:number; selling_price:number; supplier_id:number|null; }
 
-async function requireInventoryManager(){ const user=await getCurrentUser(); if(!user) redirect("/"); if(!["ADMIN","INVENTORY"].includes(user.role)) redirect("/dashboard"); return user; }
+async function requireInventoryManager(){ const user=await getCurrentUser(); if(!user) redirect("/"); if(user.role !== "OWNER") redirect("/dashboard"); return user; }
 function ymd(d=new Date()){return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`}
 function fail(message:string):never{redirect(`/inventory/initial-inventory?error=${encodeURIComponent(message)}`)}
 

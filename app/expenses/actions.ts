@@ -67,14 +67,9 @@ export async function createExpenseAction(formData: FormData) {
       throw new Error('Specify the expense when category is "Others".');
     }
 
-    const [numRows] = await connection.query<RowDataPacket[]>(
-      "SELECT COALESCE(MAX(id),0)+1 next_no FROM expenses",
-    );
-    const nextNo = Number(numRows[0]?.next_no ?? 1);
     const now = new Date();
     const pad=(n:number)=>String(n).padStart(2,"0");
-    const expenseNumber =
-      `EXP-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${String(nextNo).padStart(5,"0")}`;
+    const expenseNumber = `EXP-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${Date.now().toString(36).slice(-6).toUpperCase()}${Math.random().toString(36).slice(2,4).toUpperCase()}`;
 
     const [result] = await connection.execute<ResultSetHeader>(
       `INSERT INTO expenses

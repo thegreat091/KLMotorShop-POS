@@ -74,7 +74,7 @@ export default function AdjustmentForm({ batches }: { batches: BatchOption[] }) 
           <div className={styles.batchInfo}>
             <div><span>Product</span><strong>{selected.productName}</strong></div>
             <div><span>Batch</span><strong>{selected.batchNumber}</strong></div>
-            <div><span>Barcode</span><strong>{selected.barcode}</strong></div>
+            <div><span>QR Code</span><strong>{selected.barcode}</strong></div>
             <div><span>Remaining</span><strong>{selected.remaining} {selected.unit}</strong></div>
           </div>
         ) : null}

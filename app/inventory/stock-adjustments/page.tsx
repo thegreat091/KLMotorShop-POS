@@ -35,7 +35,7 @@ export default async function StockAdjustmentsPage({
   if (!user) redirect("/");
   if (!["ADMIN", "INVENTORY", "OWNER"].includes(user.role)) redirect("/dashboard");
 
-  const canCreate = user.role === "ADMIN" || user.role === "INVENTORY";
+  const canCreate = user.role === "OWNER";
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
   const type = params.type?.trim() ?? "";

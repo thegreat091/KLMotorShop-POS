@@ -24,6 +24,7 @@ interface ItemRow extends RowDataPacket {
   service_amount: number;
   mechanic_percentage: number;
   mechanic_share: number;
+  payout_item_amount: number;
 }
 
 function money(value: number) {
@@ -81,7 +82,8 @@ export default async function MechanicPayoutPrintPage({
         s.service_name,
         me.service_amount,
         me.mechanic_percentage,
-        me.mechanic_share
+        me.mechanic_share,
+        mpi.amount AS payout_item_amount
       FROM mechanic_payout_items mpi
       JOIN mechanic_earnings me ON me.id = mpi.mechanic_earning_id
       LEFT JOIN job_orders jo ON jo.id = me.job_order_id
@@ -136,8 +138,8 @@ export default async function MechanicPayoutPrintPage({
               <th>Job Order</th>
               <th>Service</th>
               <th>Service Amount</th>
-              <th>Share</th>
-              <th>Mechanic Earnings</th>
+              <th>Daily Rule</th>
+              <th>Take Home Before Advance</th>
             </tr>
           </thead>
           <tbody>
@@ -146,15 +148,15 @@ export default async function MechanicPayoutPrintPage({
                 <td>{item.job_order_number ?? "—"}</td>
                 <td>{item.service_name ?? "—"}</td>
                 <td>{money(item.service_amount)}</td>
-                <td>{Number(item.mechanic_percentage).toFixed(2)}%</td>
-                <td>{money(item.mechanic_share)}</td>
+                <td>{Number(item.payout_item_amount) < Number(item.service_amount) ? "20% deducted" : "No deduction"}</td>
+                <td>{money(item.payout_item_amount)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <section className={styles.total}>
-          <span>TOTAL PAYOUT</span>
+          <span>FINAL PAYOUT AFTER CASH ADVANCE</span>
           <strong>{money(payout.total_amount)}</strong>
         </section>
 

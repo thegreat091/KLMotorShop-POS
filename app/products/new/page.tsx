@@ -13,7 +13,7 @@ interface NewProductPageProps { searchParams: Promise<{ error?: string }>; }
 export default async function NewProductPage({ searchParams }: NewProductPageProps) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "ADMIN" && user.role !== "INVENTORY") redirect("/products");
+  if (user.role !== "OWNER") redirect("/products");
 
   const parameters = await searchParams;
   const [categories] = await pool.query<OptionRow[]>(`SELECT id, category_name AS label FROM product_categories WHERE is_active = 1 ORDER BY category_name`);
@@ -37,7 +37,7 @@ export default async function NewProductPage({ searchParams }: NewProductPagePro
           <div className={styles.formBody}>
             <div className={styles.twoColumns}>
               <label className={styles.field}><span>Product Name <strong>*</strong></span><input name="product_name" maxLength={180} placeholder="Example: 10W-40 Motorcycle Oil" autoFocus required /><small>Product code will be generated automatically as PRD-000001.</small></label>
-              <label className={styles.field}><span>Barcode</span><input name="barcode" maxLength={100} placeholder="Scan or enter barcode" /><small>Optional. If supplied, the barcode must be unique.</small></label>
+              <label className={styles.field}><span>QR Code</span><input name="barcode" maxLength={100} placeholder="Scan or enter QR value" /><small>Optional. If supplied, the QR value must be unique.</small></label>
             </div>
 
             <div className={styles.threeColumns}>

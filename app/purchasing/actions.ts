@@ -20,17 +20,15 @@ async function requirePurchasingAccess() {
   return user;
 }
 
-async function nextPoNumber(connection: PoolConnection) {
-  const [rows] = await connection.query<RowDataPacket[]>(
-    "SELECT COALESCE(MAX(id),0)+1 AS next_no FROM purchase_orders",
-  );
+async function nextPoNumber(_connection: PoolConnection) {
   const now = new Date();
   const pad = (n:number)=>String(n).padStart(2,"0");
-  return `PO-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${String(rows[0]?.next_no ?? 1).padStart(5,"0")}`;
+  return `PO-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${Date.now().toString(36).slice(-6).toUpperCase()}${Math.random().toString(36).slice(2,4).toUpperCase()}`;
 }
 
 export async function createPurchaseOrderAction(formData: FormData) {
   const user = await requirePurchasingAccess();
+  if (user.role !== "OWNER") redirect("/purchasing/purchase-orders?error=Only%20the%20Owner%20can%20create%20purchase%20orders.");
 
   const supplierId = Number(clean(formData.get("supplier_id")));
   const expectedDate = clean(formData.get("expected_date"));

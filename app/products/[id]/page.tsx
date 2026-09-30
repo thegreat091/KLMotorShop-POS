@@ -19,7 +19,7 @@ interface EditProductPageProps { params: Promise<{ id: string }>; searchParams: 
 export default async function EditProductPage({ params, searchParams }: EditProductPageProps) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "ADMIN" && user.role !== "INVENTORY") redirect("/products");
+  if (user.role !== "OWNER") redirect("/products");
 
   const routeParameters = await params;
   const queryParameters = await searchParams;
@@ -49,7 +49,7 @@ export default async function EditProductPage({ params, searchParams }: EditProd
           <div className={styles.formBody}>
             <div className={styles.twoColumns}>
               <label className={styles.field}><span>Product Name <strong>*</strong></span><input name="product_name" maxLength={180} defaultValue={product.product_name} required /></label>
-              <label className={styles.field}><span>Barcode</span><input name="barcode" maxLength={100} defaultValue={product.barcode ?? ""} /></label>
+              <label className={styles.field}><span>QR Code</span><input name="barcode" maxLength={100} defaultValue={product.barcode ?? ""} /></label>
             </div>
 
             <div className={styles.threeColumns}>

@@ -42,14 +42,9 @@ async function requireJobOrderEditor() {
   return user;
 }
 async function nextJobOrderNumber() {
-  const [rows] = await pool.query<NextNumberRow[]>(`
-    SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(job_order_number, '-', -1) AS UNSIGNED)),0)+1 next_number
-    FROM job_orders
-    WHERE job_order_number LIKE 'JO-%'
-  `);
   const date = new Date();
   const stamp = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,"0")}${String(date.getDate()).padStart(2,"0")}`;
-  return `JO-${stamp}-${String(Number(rows[0]?.next_number ?? 1)).padStart(5,"0")}`;
+  return `JO-${stamp}-${Date.now().toString(36).slice(-6).toUpperCase()}${Math.random().toString(36).slice(2,4).toUpperCase()}`;
 }
 async function logActivity(user: { id: number; fullName: string; role: string }, action: string, id: number) {
   await pool.execute(`INSERT INTO activity_logs
@@ -86,11 +81,7 @@ export async function createClientFromJobOrder(input: {
     if (existing[0]) return { ok: false, message: "Another client already uses this mobile number." };
   }
 
-  const [nextRows] = await pool.query<(RowDataPacket & { next_number:number })[]>(`
-    SELECT COALESCE(MAX(CAST(SUBSTRING(client_code,8) AS UNSIGNED)),0)+1 AS next_number
-    FROM clients WHERE client_code LIKE 'CLIENT-%'
-  `);
-  const clientCode = `CLIENT-${String(Number(nextRows[0]?.next_number ?? 1)).padStart(6,"0")}`;
+  const clientCode = `CLIENT-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2,4).toUpperCase()}`;
 
   try {
     const [result] = await pool.execute<ResultSetHeader>(`
@@ -151,11 +142,7 @@ export async function createMotorcycleFromJobOrder(input: {
   );
   if (existing[0]) return { ok: false, message: "A motorcycle with this plate number already exists." };
 
-  const [nextRows] = await pool.query<(RowDataPacket & { next_number:number })[]>(`
-    SELECT COALESCE(MAX(CAST(SUBSTRING(motorcycle_code,6) AS UNSIGNED)),0)+1 AS next_number
-    FROM motorcycles WHERE motorcycle_code LIKE 'BIKE-%'
-  `);
-  const motorcycleCode = `BIKE-${String(Number(nextRows[0]?.next_number ?? 1)).padStart(6,"0")}`;
+  const motorcycleCode = `BIKE-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2,4).toUpperCase()}`;
 
   try {
     const [result] = await pool.execute<ResultSetHeader>(`
@@ -286,7 +273,7 @@ export async function addJobOrderPartByBarcode(fd: FormData) {
   const barcode = text(fd,"barcode");
 
   if (!jobOrderId || !barcode) {
-    redirect(url(`/job-orders/${jobOrderId}`,"error","Scan or enter a barcode first."));
+    redirect(url(`/job-orders/${jobOrderId}`,"error","Scan or enter a QR code first."));
   }
 
   const [jobs] = await pool.execute<JobRow[]>(
@@ -324,7 +311,7 @@ export async function addJobOrderPartByBarcode(fd: FormData) {
   }
 
   if (!product) {
-    redirect(url(`/job-orders/${jobOrderId}`,"error",`Barcode ${barcode} was not found or has no available stock.`));
+    redirect(url(`/job-orders/${jobOrderId}`,"error",`QR code ${barcode} was not found or has no available stock.`));
   }
 
   const availableStock = Number(product.quantity_on_hand);
@@ -413,6 +400,23 @@ export async function updateJobOrderStatus(fd: FormData) {
   const [rows] = await pool.execute<JobRow[]>(`SELECT id,status,assigned_mechanic_id FROM job_orders WHERE id=? LIMIT 1`,[id]);
   const job = rows[0];
   if (!job) redirect("/job-orders");
+  const allowedTransitions: Record<string, string[]> = {
+    RECEIVED: ["INSPECTION", "CANCELLED"],
+    INSPECTION: ["WAITING_PARTS", "REPAIRING", "CANCELLED"],
+    WAITING_PARTS: ["REPAIRING", "CANCELLED"],
+    REPAIRING: ["WAITING_PARTS", "READY_FOR_PAYMENT", "CANCELLED"],
+    READY_FOR_PAYMENT: ["REPAIRING", "CANCELLED"],
+    PAID: ["COMPLETED"],
+    COMPLETED: ["RELEASED"],
+    RELEASED: [],
+    CANCELLED: [],
+  };
+  if (!(allowedTransitions[job.status] ?? []).includes(status)) {
+    redirect(url(`/job-orders/${id}`,"error",`Invalid status change from ${job.status.replaceAll("_"," ")} to ${status.replaceAll("_"," ")}.`));
+  }
+  // PAID is intentionally not a manual transition. It is written atomically by POS checkout.
+  if (status === "PAID") redirect(url(`/job-orders/${id}`,"error","Paid status can only be set by completing payment in POS."));
+
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();

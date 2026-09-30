@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Barcode,
+  QrCode,
   Bike,
   Minus,
   Plus,
@@ -263,7 +263,7 @@ export function PosClient({
         if (batch) addBatch(batch);
         else setMessage("No available batch for that product.");
       } else {
-        setMessage("Barcode not found.");
+        setMessage("QR code not found.");
       }
     }
 
@@ -353,7 +353,7 @@ export function PosClient({
         <section className={styles.catalogPanel}>
           <div className={styles.scanBox}>
             <label>
-              <Barcode size={18} /> Barcode Scanner
+              <QrCode size={18} /> QR Scanner
             </label>
             <div className={styles.scanRow}>
               <input

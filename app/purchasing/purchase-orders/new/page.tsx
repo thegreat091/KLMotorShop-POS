@@ -12,7 +12,7 @@ interface Product extends RowDataPacket{id:number;product_code:string;product_na
 type Params={error?:string};
 
 export default async function NewPO({searchParams}:{searchParams:Promise<Params>}){
- const user=await getCurrentUser();if(!user)redirect("/");if(!["ADMIN","OWNER","INVENTORY"].includes(user.role))redirect("/dashboard");
+ const user=await getCurrentUser();if(!user)redirect("/");if(user.role!=="OWNER")redirect("/purchasing/purchase-orders");
  const p=await searchParams;
  const [suppliers]=await pool.query<Supplier[]>("SELECT id,supplier_name FROM suppliers WHERE is_active=1 ORDER BY supplier_name");
  const [products]=await pool.query<Product[]>("SELECT id,product_code,product_name,cost_price,quantity_on_hand,reorder_level,supplier_id FROM products WHERE is_active=1 ORDER BY product_name");

@@ -22,7 +22,7 @@ export default async function PurchaseOrdersPage({searchParams}:{searchParams:Pr
  ORDER BY po.order_date DESC,po.id DESC`,[status,status,q,like,like]);
  const money=(v:number)=>new Intl.NumberFormat("en-PH",{style:"currency",currency:"PHP"}).format(Number(v||0));
  return <main className={styles.page}>
- <div className={styles.topbar}><Link href="/purchasing"><ArrowLeft size={17}/>Purchasing</Link><Link href="/purchasing/purchase-orders/new" className={styles.primary}><Plus size={17}/>New Purchase Order</Link></div>
+ <div className={styles.topbar}><Link href="/purchasing"><ArrowLeft size={17}/>Purchasing</Link>{user.role === "OWNER" ? <Link href="/purchasing/purchase-orders/new" className={styles.primary}><Plus size={17}/>New Purchase Order</Link> : null}</div>
  {p.success?<div className={styles.success}>{p.success}</div>:null}
  <form className={styles.filters}><input name="q" defaultValue={q} placeholder="PO number or supplier..."/><select name="status" defaultValue={status}><option value="">All statuses</option>{["DRAFT","ORDERED","PARTIALLY_RECEIVED","RECEIVED","CANCELLED"].map(x=><option key={x}>{x}</option>)}</select><button>Apply</button></form>
  <section className={styles.card}><div className={styles.tableWrap}><table><thead><tr><th>Date</th><th>PO Number</th><th>Supplier</th><th>Expected</th><th>Status</th><th>Created By</th><th>Total</th><th/></tr></thead><tbody>

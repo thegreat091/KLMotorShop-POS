@@ -18,6 +18,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import styles from "./sales.module.css";
+import { reverseSaleAction } from "./actions";
 
 interface SaleHistoryRow extends RowDataPacket {
   id: number;
@@ -102,6 +103,8 @@ export default async function SalesPage({
     cashier?: string;
     from?: string;
     to?: string;
+    success?: string;
+    error?: string;
   }>;
 }) {
   const user = await getCurrentUser();
@@ -255,6 +258,9 @@ export default async function SalesPage({
         <ArrowLeft size={17} />
         Dashboard
       </Link>
+
+      {params.success ? <div style={{marginBottom:12,padding:"12px 14px",border:"1px solid #bbf7d0",borderRadius:10}}>{params.success}</div> : null}
+      {params.error ? <div style={{marginBottom:12,padding:"12px 14px",border:"1px solid #fecaca",borderRadius:10}}>{params.error}</div> : null}
 
       <section className={styles.hero}>
         <div className={styles.heroText}>
@@ -479,13 +485,19 @@ export default async function SalesPage({
                   </td>
 
                   <td className={styles.actionCell}>
-                    <Link
-                      href={`/pos/receipt/${sale.id}`}
-                      className={styles.actionButton}
-                    >
-                      <Eye size={14} />
-                      View / Reprint
+                    <Link href={`/pos/receipt/${sale.id}`} className={styles.actionButton}>
+                      <Eye size={14} /> View / Reprint
                     </Link>
+                    {user.role === "OWNER" && sale.status === "COMPLETED" ? (
+                      <form action={reverseSaleAction} style={{display:"grid",gap:6,marginTop:6,minWidth:190}}>
+                        <input type="hidden" name="sale_id" value={sale.id} />
+                        <input name="reason" minLength={5} required placeholder="Reason for reversal" style={{width:"100%"}} />
+                        <div style={{display:"flex",gap:6}}>
+                          <button name="reversal_type" value="VOIDED" className={styles.actionButton} type="submit">Void</button>
+                          <button name="reversal_type" value="REFUNDED" className={styles.actionButton} type="submit">Refund</button>
+                        </div>
+                      </form>
+                    ) : null}
                   </td>
                 </tr>
               ))}

@@ -43,7 +43,7 @@ export default async function ReceivePOPage({
 
   if (!user) redirect("/");
 
-  if (!["ADMIN", "INVENTORY"].includes(user.role)) {
+  if (user.role !== "OWNER") {
     redirect("/purchasing");
   }
 

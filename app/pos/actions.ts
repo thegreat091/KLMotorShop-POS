@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { pool } from "@/lib/db";
+import { accountForPaymentMethod } from "@/lib/finance";
 
 type PaymentMethod = "CASH" | "GCASH" | "BANK_TRANSFER" | "CARD" | "OTHER";
 
@@ -56,7 +57,7 @@ function fail(message: string): never {
 async function requireCashier() {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "ADMIN" && user.role !== "CASHIER") redirect("/dashboard");
+  if (!["ADMIN", "CASHIER", "OWNER"].includes(user.role)) redirect("/dashboard");
   return user;
 }
 
@@ -260,6 +261,22 @@ export async function completeProductSale(formData: FormData) {
         throw new Error(`${batch.product_name}: total product stock is insufficient.`);
       }
 
+      // Protect parts committed to other active Job Orders. This is a soft reservation:
+      // direct POS sales may use only stock above the quantity already committed to jobs.
+      const [reservedRows] = await connection.query<Array<RowDataPacket & { reserved_qty:number }>>(
+        `SELECT COALESCE(SUM(jp.quantity),0) reserved_qty
+         FROM job_order_parts jp
+         JOIN job_orders jo ON jo.id=jp.job_order_id
+         WHERE jp.product_id=?
+           AND jo.status IN ('RECEIVED','INSPECTION','WAITING_PARTS','REPAIRING','READY_FOR_PAYMENT')
+           AND (? IS NULL OR jo.id<>?)`,
+        [batch.product_id, jobOrderId, jobOrderId],
+      );
+      const reservedForOtherJobs = Number(reservedRows[0]?.reserved_qty ?? 0);
+      if (Number(batch.product_quantity) - item.quantity < reservedForOtherJobs) {
+        throw new Error(`${batch.product_name}: stock is reserved for another active Job Order.`);
+      }
+
       const unitPrice = Number(batch.selling_price) > 0
         ? Number(batch.selling_price)
         : Number(batch.product_selling_price);
@@ -272,6 +289,18 @@ export async function completeProductSale(formData: FormData) {
 
     subtotal = Math.round((subtotal + jobServices.reduce((sum,s)=>sum+Number(s.service_charge),0)) * 100) / 100;
     if (discountAmount > subtotal) throw new Error("Discount cannot be greater than the subtotal.");
+
+    // Cashiers may apply only the configured routine discount. Larger discounts must
+    // be completed by the Owner so exceptional price reductions cannot pass silently.
+    const configuredPercent = Number(process.env.POS_CASHIER_MAX_DISCOUNT_PERCENT ?? "10");
+    const cashierMaxDiscountPercent = Number.isFinite(configuredPercent)
+      ? Math.max(0, Math.min(100, configuredPercent))
+      : 10;
+    const cashierMaxDiscount = Math.round(subtotal * cashierMaxDiscountPercent) / 100;
+    if (user.role === "CASHIER" && discountAmount > cashierMaxDiscount) {
+      throw new Error(`Discount exceeds the cashier limit of ${cashierMaxDiscountPercent}%. Ask the Owner to complete this sale.`);
+    }
+
     const totalAmount = Math.round((subtotal - discountAmount) * 100) / 100;
 
     const amountTendered = amountTenderedInput;
@@ -399,10 +428,29 @@ export async function completeProductSale(formData: FormData) {
     }
 
 
+    // Every completed sale must hit the cash ledger in the same database
+    // transaction as the sale and inventory deduction. This prevents sales and
+    // cash balances from drifting apart.
+    await connection.execute(
+      `INSERT INTO money_ledger (
+        entry_date, entry_type, reference_table, reference_id, description,
+        payment_method, account, amount_in, amount_out, processed_by, remarks
+      ) VALUES (CURRENT_TIMESTAMP, 'SALE', 'sales', ?, ?, ?, ?, ?, 0.00, ?, ?)`,
+      [
+        String(saleId),
+        `Sale ${saleNumber}`,
+        paymentMethod,
+        accountForPaymentMethod(paymentMethod),
+        totalAmount.toFixed(2),
+        user.id,
+        remarks || null,
+      ],
+    );
+
     if (jobOrderId) {
       for (const service of jobServices) {
         if (service.mechanic_id) {
-          await connection.execute(`INSERT INTO mechanic_earnings (mechanic_id,job_order_service_id,job_order_id,service_id,service_amount,mechanic_percentage,mechanic_share,earning_date,payout_status,remarks) VALUES (?,?,?,?,?,?,?,NOW(),'UNPAID',?)`,[service.mechanic_id,service.id,jobOrderId,service.service_id,Number(service.service_charge),Number(service.mechanic_percentage),Number(service.mechanic_share),`${saleNumber} / ${service.service_name}`]);
+          await connection.execute(`INSERT INTO mechanic_earnings (mechanic_id,job_order_service_id,job_order_id,service_id,service_amount,mechanic_percentage,mechanic_share,earning_date,payout_status,remarks) VALUES (?,?,?,?,?,?,?,NOW(),'UNPAID',?)`,[service.mechanic_id,service.id,jobOrderId,service.service_id,Number(service.service_charge),100,Number(service.service_charge),`${saleNumber} / ${service.service_name}`]);
         }
         await connection.execute(`UPDATE job_order_services SET status='COMPLETED',completed_at=COALESCE(completed_at,NOW()) WHERE id=?`,[service.id]);
       }
@@ -434,6 +482,7 @@ export async function completeProductSale(formData: FormData) {
   revalidatePath("/inventory/stock-in");
   revalidatePath("/inventory/stock-adjustments");
   revalidatePath("/dashboard");
+  revalidatePath("/money-ledger");
   if (jobOrderId) { revalidatePath(`/job-orders/${jobOrderId}`); revalidatePath("/job-orders"); }
   redirect(`/pos/receipt/${saleId}?success=${encodeURIComponent(`${saleNumber} completed successfully.`)}`);
 }

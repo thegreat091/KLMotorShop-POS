@@ -311,7 +311,7 @@ export default async function SettingsPage({
             </label>
 
             <label>
-              Barcode Label Printer Name
+              QR Label Printer Name
               <input
                 name="label_printer_name"
                 placeholder="Optional"

@@ -66,7 +66,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   if (!canViewProducts) redirect("/dashboard");
 
-  const canManageProducts = user.role === "ADMIN" || user.role === "INVENTORY";
+  const canManageProducts = user.role === "OWNER";
   const canPrintQrLabels = user.role === "ADMIN" || user.role === "INVENTORY" || user.role === "OWNER";
   const parameters = await searchParams;
   const search = parameters.search?.trim() ?? "";

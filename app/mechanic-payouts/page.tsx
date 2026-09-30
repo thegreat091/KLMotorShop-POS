@@ -93,7 +93,7 @@ export default async function MechanicPayoutsPage({
         m.id,
         m.full_name,
         COUNT(me.id) AS unpaid_count,
-        COALESCE(SUM(me.mechanic_share), 0) AS unpaid_amount
+        COALESCE(SUM(me.service_amount), 0) AS unpaid_amount
       FROM mechanics m
       INNER JOIN mechanic_earnings me
         ON me.mechanic_id = m.id
@@ -134,11 +134,14 @@ export default async function MechanicPayoutsPage({
 
     earnings = earningRows;
 
+    const daily = new Map<string, number>();
+    for (const row of earnings) {
+      const d = new Date(row.earning_date);
+      const key = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+      daily.set(key, (daily.get(key) ?? 0) + Number(row.service_amount));
+    }
     summary = {
-      unpaid_amount: earnings.reduce(
-        (sum, row) => sum + Number(row.mechanic_share),
-        0,
-      ),
+      unpaid_amount: [...daily.values()].reduce((sum, gross) => sum + (gross > 210 ? gross * 0.80 : gross), 0),
       unpaid_count: earnings.length,
     };
   }
@@ -227,7 +230,7 @@ export default async function MechanicPayoutsPage({
         </article>
         <article>
           <CircleDollarSign />
-          <span>Outstanding Amount</span>
+          <span>Estimated Take Home</span>
           <strong>{money(summary.unpaid_amount)}</strong>
         </article>
         <article>
@@ -280,7 +283,7 @@ export default async function MechanicPayoutsPage({
                       <th>Service</th>
                       <th>Service Amount</th>
                       <th>Share %</th>
-                      <th>Mechanic Share</th>
+                      <th>Gross Earning</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -300,7 +303,7 @@ export default async function MechanicPayoutsPage({
                         <td>{money(earning.service_amount)}</td>
                         <td>{Number(earning.mechanic_percentage).toFixed(2)}%</td>
                         <td>
-                          <strong>{money(earning.mechanic_share)}</strong>
+                          <strong>{money(earning.service_amount)}</strong>
                         </td>
                       </tr>
                     ))}
@@ -310,13 +313,10 @@ export default async function MechanicPayoutsPage({
 
               <div className={styles.payoutBox}>
                 <div>
-                  <span>Selected Earnings Before Advance</span>
+                  <span>Estimated Take Home Before Advance</span>
                   <strong>{money(summary.unpaid_amount)}</strong>
                   {advanceAmount > 0 ? <small>Open cash advance: {money(advanceAmount)} will be deducted automatically.</small> : null}
-                  <small>
-                    Uncheck individual rows if you are paying only selected
-                    earnings.
-                  </small>
+                  <small>Daily rule: gross up to ₱210 = no deduction; above ₱210 = 20% deduction. Cash advances are deducted separately.</small>
                 </div>
 
                 <label>

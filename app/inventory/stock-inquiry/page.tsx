@@ -1,7 +1,7 @@
 import type { RowDataPacket } from "mysql2";
 import {
   ArrowLeft,
-  Barcode,
+  QrCode,
   Boxes,
   CircleDollarSign,
   Clock3,
@@ -268,7 +268,7 @@ export default async function StockInquiryPage({
       <section className={styles.content}>
         <section className={styles.scannerCard}>
           <div>
-            <p>Barcode / Product Lookup</p>
+            <p>QR / Product Lookup</p>
             <h2>Scan or search</h2>
           </div>
           <InquiryForm initialValue={q} />
@@ -334,7 +334,7 @@ export default async function StockInquiryPage({
                 {["ADMIN", "INVENTORY", "OWNER"].includes(user.role) ? (
                   <Link href={`/inventory/ledger?search=${encodeURIComponent(product.product_code)}`}>View Ledger</Link>
                 ) : null}
-                {["ADMIN", "INVENTORY"].includes(user.role) ? (
+                {user.role === "OWNER" ? (
                   <Link href="/inventory/stock-in/new">Stock In</Link>
                 ) : null}
               </div>
@@ -354,12 +354,12 @@ export default async function StockInquiryPage({
                         <tr><td colSpan={6} className={styles.empty}>No stock-in batches recorded.</td></tr>
                       ) : batches.map((batch) => (
                         <tr key={batch.id} className={matchedBatchId === batch.id ? styles.highlightRow : undefined}>
-                          <td><strong>{batch.batch_number}</strong><small><Barcode size={13} /> {batch.barcode}</small></td>
+                          <td><strong>{batch.batch_number}</strong><small><QrCode size={13} /> {batch.barcode}</small></td>
                           <td>{batch.supplier_name ?? "—"}</td>
                           <td><span>{qty(Number(batch.quantity_received))} {product.unit}</span><small><Clock3 size={13} /> {dateTime(batch.received_at)}</small></td>
                           <td><strong>{qty(Number(batch.quantity_remaining))} {product.unit}</strong></td>
                           <td><span className={styles.batchStatus}>{batch.status}</span></td>
-                          <td><Link className={styles.smallLink} href={`/inventory/stock-in/${batch.stock_transaction_id}/labels`}>Print Barcode</Link></td>
+                          <td><Link className={styles.smallLink} href={`/inventory/stock-in/${batch.stock_transaction_id}/labels`}>Print QR</Link></td>
                         </tr>
                       ))}
                     </tbody>

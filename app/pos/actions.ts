@@ -435,7 +435,16 @@ export async function completeProductSale(formData: FormData) {
       `INSERT INTO money_ledger (
         entry_date, entry_type, reference_table, reference_id, description,
         payment_method, account, amount_in, amount_out, processed_by, remarks
-      ) VALUES (CURRENT_TIMESTAMP, 'SALE', 'sales', ?, ?, ?, ?, ?, 0.00, ?, ?)`,
+      ) VALUES (CURRENT_TIMESTAMP, 'SALE', 'sales', ?, ?, ?, ?, ?, 0.00, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        entry_date = VALUES(entry_date),
+        description = VALUES(description),
+        payment_method = VALUES(payment_method),
+        account = VALUES(account),
+        amount_in = VALUES(amount_in),
+        amount_out = 0.00,
+        processed_by = VALUES(processed_by),
+        remarks = VALUES(remarks)`,
       [
         String(saleId),
         `Sale ${saleNumber}`,

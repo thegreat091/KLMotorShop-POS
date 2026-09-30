@@ -49,7 +49,7 @@ export async function reverseSaleAction(formData: FormData) {
       ]);
     }
 
-    await conn.execute(`INSERT INTO money_ledger(entry_date,entry_type,reference_table,reference_id,description,payment_method,account,amount_in,amount_out,processed_by,remarks) VALUES (CURRENT_TIMESTAMP,'SALE','sales',?,?,?,?,0.00,?,?,?)`,[
+    await conn.execute(`INSERT INTO money_ledger(entry_date,entry_type,reference_table,reference_id,description,payment_method,account,amount_in,amount_out,processed_by,remarks) VALUES (CURRENT_TIMESTAMP,?,'sale_reversals',?,?,?,?,0.00,?,?,?)`,[
       `${saleId}-${reversalType}`,`${reversalType} ${sale.sale_number}`,sale.payment_method,accountForPaymentMethod(sale.payment_method),Number(sale.total_amount).toFixed(2),user.id,reason
     ]);
 

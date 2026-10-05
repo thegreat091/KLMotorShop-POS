@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import styles from "../job-orders.module.css";
+import SearchableSelect from "../SearchableSelect";
 
 type Service = { id: number; service_name: string; service_charge: number };
 
@@ -20,17 +21,22 @@ export default function ServiceChargeFields({ services }: { services: Service[] 
     <>
       <label className={styles.field}>
         <span>Service</span>
-        <select name="service_id" required value={serviceId} onChange={(e) => selectService(e.target.value)}>
-          <option value="" disabled>Select service</option>
-          {services.map((s) => (
-            <option key={s.id} value={s.id}>{s.service_name} — Suggested ₱{Number(s.service_charge).toFixed(2)}</option>
-          ))}
-        </select>
+        <SearchableSelect
+          name="service_id"
+          value={serviceId}
+          onChange={selectService}
+          required
+          placeholder="Search service"
+          options={services.map((s) => ({
+            value: String(s.id),
+            label: `${s.service_name} — Suggested ₱${Number(s.service_charge).toFixed(2)}`,
+          }))}
+        />
       </label>
       <label className={styles.field}>
         <span>Actual Service Charge</span>
         <input name="service_charge" type="number" min="0" step="0.01" required value={charge} onChange={(e) => setCharge(e.target.value)} placeholder="Enter actual charge" />
-        <small>{selected ? `Suggested: ₱${Number(selected.service_charge).toFixed(2)} — editable for discount or higher charge.` : "Select a service to load its suggested price."}</small>
+        <small>{selected ? `Suggested: ₱${Number(selected.service_charge).toFixed(2)} — editable for discount or higher charge.` : "Search and select a service to load its suggested price."}</small>
       </label>
     </>
   );

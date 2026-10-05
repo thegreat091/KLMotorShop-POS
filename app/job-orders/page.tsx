@@ -22,7 +22,7 @@ export default async function JobOrdersPage({searchParams}:{searchParams:Promise
    OR m.plate_number COLLATE utf8mb4_unicode_ci LIKE CAST(? AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci)
  AND (CAST(? AS CHAR CHARACTER SET utf8mb4)=''
    OR jo.status COLLATE utf8mb4_unicode_ci = CAST(? AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci)
- ORDER BY jo.date_received DESC,jo.id DESC`,[q,like,like,like,status,status]);
+ ORDER BY CASE WHEN jo.status IN ('COMPLETED','RELEASED','CANCELLED') THEN 1 ELSE 0 END ASC, jo.date_received DESC,jo.id DESC`,[q,like,like,like,status,status]);
  const statuses=["RECEIVED","INSPECTION","WAITING_PARTS","REPAIRING","READY_FOR_PAYMENT","PAID","COMPLETED","RELEASED","CANCELLED"];
  return <main className={styles.page}>
   <Link href="/dashboard" className={styles.back}><ArrowLeft size={17}/> Dashboard</Link>

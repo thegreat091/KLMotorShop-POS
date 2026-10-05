@@ -103,6 +103,51 @@ export async function createClientFromJobOrder(input: {
   }
 }
 
+interface InlineModelResult {
+  ok: boolean;
+  message: string;
+  model?: { id: number; model_name: string };
+}
+
+export async function createMotorcycleModelFromJobOrder(input: { modelName: string }): Promise<InlineModelResult> {
+  const user = await requireJobOrderEditor();
+  const modelName = String(input.modelName ?? "").trim().replace(/\s+/g, " ");
+
+  if (!modelName) return { ok: false, message: "Motorcycle model name is required." };
+  if (modelName.length > 120) return { ok: false, message: "Motorcycle model name must not exceed 120 characters." };
+
+  const [existing] = await pool.execute<(RowDataPacket & { id:number; model_name:string; is_active:number })[]>(
+    `SELECT id,model_name,is_active FROM motorcycle_models WHERE LOWER(model_name)=LOWER(?) LIMIT 1`, [modelName]
+  );
+  if (existing[0]) {
+    if (!Number(existing[0].is_active)) {
+      await pool.execute(`UPDATE motorcycle_models SET is_active=1,updated_by=? WHERE id=?`, [user.id, existing[0].id]);
+    }
+    return { ok: true, message: "Motorcycle model already exists and was selected.", model: { id: Number(existing[0].id), model_name: String(existing[0].model_name) } };
+  }
+
+  const [nextRows] = await pool.query<(RowDataPacket & { next_number:number })[]>(
+    `SELECT COALESCE(MAX(CAST(SUBSTRING(model_code,7) AS UNSIGNED)),0)+1 next_number FROM motorcycle_models WHERE model_code LIKE 'MODEL-%'`
+  );
+  const modelCode = `MODEL-${String(Number(nextRows[0]?.next_number ?? 1)).padStart(6,"0")}`;
+
+  try {
+    const [result] = await pool.execute<ResultSetHeader>(`
+      INSERT INTO motorcycle_models (model_code,model_name,remarks,is_active,created_by,updated_by)
+      VALUES (?,?,NULL,1,?,?)
+    `,[modelCode,modelName,user.id,user.id]);
+    await pool.execute(`INSERT INTO activity_logs
+      (user_id,user_name,user_role,action,module,reference_table,reference_id)
+      VALUES (?,?,?,?,?,?,?)`,[user.id,user.fullName,user.role,`Created motorcycle model ${modelCode} - ${modelName} from Job Order.`,"Motorcycle Models","motorcycle_models",String(result.insertId)]);
+    revalidatePath("/motorcycle-models");
+    revalidatePath("/job-orders/new");
+    return { ok: true, message: "Motorcycle model added successfully.", model: { id: result.insertId, model_name: modelName } };
+  } catch (error) {
+    console.error("Unable to add motorcycle model from job order", error);
+    return { ok: false, message: "Unable to save the motorcycle model. Please try again." };
+  }
+}
+
 interface InlineMotorcycleRow extends RowDataPacket { id: number; }
 interface InlineMotorcycleResult {
   ok: boolean;

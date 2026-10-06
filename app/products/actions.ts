@@ -172,16 +172,16 @@ export async function createProduct(formData: FormData) {
   const user = await requireProductManager();
 
   const productName = getText(formData, "product_name");
-  const barcode = inventoryLimitedEdit ? (currentProduct.barcode ?? "") : getText(formData, "barcode");
+  const barcode = getText(formData, "barcode");
   const categoryId = getOptionalId(formData, "category_id");
-  const brandId = inventoryLimitedEdit ? currentProduct.brand_id : getOptionalId(formData, "brand_id");
+  const brandId = getOptionalId(formData, "brand_id");
   const supplierId = getOptionalId(formData, "supplier_id");
-  const description = inventoryLimitedEdit ? (currentProduct.description ?? "") : getText(formData, "description");
-  const unit = inventoryLimitedEdit ? currentProduct.unit : (getText(formData, "unit") || "PCS");
-  const costPrice = inventoryLimitedEdit ? Number(currentProduct.cost_price) : getMoney(formData, "cost_price");
-  const sellingPrice = inventoryLimitedEdit ? Number(currentProduct.selling_price) : getMoney(formData, "selling_price");
-  const reorderLevel = inventoryLimitedEdit ? Number(currentProduct.reorder_level) : getMoney(formData, "reorder_level");
-  const isActive = inventoryLimitedEdit ? Number(currentProduct.is_active) : (getText(formData, "is_active") === "0" ? 0 : 1);
+  const description = getText(formData, "description");
+  const unit = getText(formData, "unit") || "PCS";
+  const costPrice = getMoney(formData, "cost_price");
+  const sellingPrice = getMoney(formData, "selling_price");
+  const reorderLevel = getMoney(formData, "reorder_level");
+  const isActive = getText(formData, "is_active") === "0" ? 0 : 1;
 
   const validationError = validateProduct({
     productName,

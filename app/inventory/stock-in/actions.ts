@@ -59,6 +59,43 @@ async function logActivity(connection: PoolConnection, params: {
 }
 
 
+export type QuickCategoryActionState = {
+  error: string;
+  category?: { id: number; category_name: string };
+};
+
+export async function createQuickCategory(_previousState: QuickCategoryActionState, formData: FormData): Promise<QuickCategoryActionState> {
+  const user = await requireInventoryManager();
+  const categoryName = text(formData.get("category_name"));
+  const description = text(formData.get("description"));
+
+  if (!categoryName) return { error: "Category name is required." };
+  if (categoryName.length > 120) return { error: "Category name must not exceed 120 characters." };
+
+  const [existing] = await pool.query<(RowDataPacket & { id: number })[]>(
+    `SELECT id FROM product_categories WHERE LOWER(category_name) = LOWER(?) LIMIT 1`,
+    [categoryName],
+  );
+  if (existing.length) return { error: "A category with this name already exists." };
+
+  const [codeRows] = await pool.query<(RowDataPacket & { next_number: number })[]>(
+    `SELECT COALESCE(MAX(CAST(SUBSTRING(category_code, 5) AS UNSIGNED)), 0) + 1 AS next_number FROM product_categories WHERE category_code LIKE 'CAT-%'`,
+  );
+  const categoryCode = `CAT-${String(Number(codeRows[0]?.next_number ?? 1)).padStart(4, "0")}`;
+  const [result] = await pool.execute<ResultSetHeader>(
+    `INSERT INTO product_categories (category_code, category_name, description, is_active, created_by, updated_by) VALUES (?, ?, ?, 1, ?, ?)`,
+    [categoryCode, categoryName, description || null, user.id, user.id],
+  );
+
+  await pool.execute(
+    `INSERT INTO activity_logs (user_id, user_name, user_role, action, module, reference_table, reference_id) VALUES (?, ?, ?, ?, 'Product Categories', 'product_categories', ?)`,
+    [user.id, user.fullName, user.role, `Created product category ${categoryCode} - ${categoryName} from Stock In`, String(result.insertId)],
+  );
+  revalidatePath("/categories");
+  revalidatePath("/inventory/stock-in/new");
+  return { error: "", category: { id: result.insertId, category_name: categoryName } };
+}
+
 export type QuickProductActionState = {
   error: string;
   product?: {

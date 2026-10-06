@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Check, PackageSearch, Plus, Search, Trash2, X } from "lucide-react";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { createQuickProduct, createStockIn, type QuickProductActionState, type StockInActionState } from "./actions";
+import { createQuickCategory, createQuickProduct, createStockIn, type QuickCategoryActionState, type QuickProductActionState, type StockInActionState } from "./actions";
 import styles from "./stock-in-form.module.css";
 
 type ProductOption = {
@@ -20,12 +20,19 @@ type Line = { key: number; productId: string; quantity: string; unitCost: string
 
 const initialState: StockInActionState = { error: "" };
 const initialQuickProductState: QuickProductActionState = { error: "" };
+const initialQuickCategoryState: QuickCategoryActionState = { error: "" };
 
 export default function StockInForm({ products, suppliers, categories, canEditSellingPrice }: { products: ProductOption[]; suppliers: SupplierOption[]; categories: CategoryOption[]; canEditSellingPrice: boolean }) {
   const [state, formAction, pending] = useActionState(createStockIn, initialState);
   const [quickState, quickProductAction, quickPending] = useActionState(createQuickProduct, initialQuickProductState);
+  const [categoryState, quickCategoryAction, categoryPending] = useActionState(createQuickCategory, initialQuickCategoryState);
   const [availableProducts, setAvailableProducts] = useState<ProductOption[]>(products);
   const [createOpen, setCreateOpen] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState<CategoryOption[]>(categories);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categoryCreateOpen, setCategoryCreateOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [nextKey, setNextKey] = useState(2);
   const [clientError, setClientError] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -139,6 +146,21 @@ export default function StockInForm({ products, suppliers, categories, canEditSe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickState.product]);
 
+  useEffect(() => {
+    if (!categoryState.category) return;
+    const created = categoryState.category;
+    setAvailableCategories((current) => current.some((item) => item.id === created.id) ? current : [...current, created].sort((a, b) => a.category_name.localeCompare(b.category_name)));
+    setSelectedCategoryId(String(created.id));
+    setCategorySearch(created.category_name);
+    setCategoryOpen(false);
+  }, [categoryState.category]);
+
+  const filteredCategories = useMemo(() => {
+    const query = categorySearch.trim().toLowerCase();
+    return availableCategories.filter((category) => !query || category.category_name.toLowerCase().includes(query));
+  }, [availableCategories, categorySearch]);
+
+  const selectedCategory = availableCategories.find((category) => String(category.id) === selectedCategoryId);
   const visibleError = clientError || state.error;
 
   return (
@@ -208,6 +230,18 @@ export default function StockInForm({ products, suppliers, categories, canEditSe
         </section>
       </div> : null}
 
+      {categoryCreateOpen ? <div className={`${styles.modalBackdrop} ${styles.categoryModalBackdrop}`} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCategoryCreateOpen(false); }}>
+        <section className={styles.quickCategoryModal} role="dialog" aria-modal="true" aria-label="Create new category">
+          <header className={styles.modalHeader}><div><p>Stock In</p><h2>Add New Category</h2></div><button type="button" onClick={() => setCategoryCreateOpen(false)} aria-label="Close new category form"><X size={20}/></button></header>
+          <form action={quickCategoryAction} className={styles.quickProductForm}>
+            {categoryState.error ? <div className={styles.formError}><AlertTriangle size={18}/><span>{categoryState.error}</span></div> : null}
+            <label><span>Category Name <strong>*</strong></span><input name="category_name" maxLength={120} defaultValue={categorySearch} autoFocus required placeholder="Example: Engine Parts" /></label>
+            <label><span>Description</span><input name="description" maxLength={255} placeholder="Optional" /></label>
+            <footer className={styles.quickActions}><button type="button" onClick={() => setCategoryCreateOpen(false)}>Cancel</button><button type="submit" disabled={categoryPending}>{categoryPending ? "Creating..." : "Create & Select Category"}</button></footer>
+          </form>
+        </section>
+      </div> : null}
+
       {createOpen ? <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCreateOpen(false); }}>
         <section className={styles.quickProductModal} role="dialog" aria-modal="true" aria-label="Create new product">
           <header className={styles.modalHeader}><div><p>Stock In</p><h2>Add New Product</h2></div><button type="button" onClick={() => setCreateOpen(false)} aria-label="Close new product form"><X size={20}/></button></header>
@@ -215,7 +249,7 @@ export default function StockInForm({ products, suppliers, categories, canEditSe
             {quickState.error ? <div className={styles.formError}><AlertTriangle size={18}/><span>{quickState.error}</span></div> : null}
             <label><span>Product Name <strong>*</strong></span><input name="product_name" maxLength={180} defaultValue={pickerSearch} autoFocus required placeholder="Example: Brake Shoe" /></label>
             <div className={styles.quickGrid}>
-              <label><span>Category</span><select name="category_id" defaultValue=""><option value="">No category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.category_name}</option>)}</select></label>
+              <label className={styles.categoryField}><span>Category</span><input type="hidden" name="category_id" value={selectedCategoryId} /><div className={styles.categoryCombo}><div className={styles.categorySearchInput}><Search size={16}/><input value={categoryOpen ? categorySearch : (selectedCategory?.category_name ?? categorySearch)} onFocus={() => { setCategoryOpen(true); setCategorySearch(selectedCategory?.category_name ?? ""); }} onChange={(event) => { setCategorySearch(event.target.value); setSelectedCategoryId(""); setCategoryOpen(true); }} placeholder="Search category..." autoComplete="off" /></div>{categoryOpen ? <div className={styles.categoryDropdown}><button type="button" className={styles.categoryOption} onClick={() => { setSelectedCategoryId(""); setCategorySearch(""); setCategoryOpen(false); }}>No category</button>{filteredCategories.map((category) => <button key={category.id} type="button" className={styles.categoryOption} onClick={() => { setSelectedCategoryId(String(category.id)); setCategorySearch(category.category_name); setCategoryOpen(false); }}>{category.category_name}{String(category.id) === selectedCategoryId ? <Check size={14}/> : null}</button>)}{filteredCategories.length === 0 && categorySearch.trim() ? <div className={styles.categoryNoMatch}><span>No matching category.</span><button type="button" onClick={() => { setCategoryOpen(false); setCategoryCreateOpen(true); }}><Plus size={14}/> Add “{categorySearch.trim()}”</button></div> : null}</div> : null}</div><button type="button" className={styles.addCategoryInline} onClick={() => { setCategoryOpen(false); setCategoryCreateOpen(true); }}><Plus size={14}/> {categorySearch.trim() && filteredCategories.length === 0 ? `New category: ${categorySearch.trim()}` : "Type to search or add a new category below"}</button></label>
               <label><span>Unit <strong>*</strong></span><select name="unit" defaultValue="PCS"><option>PCS</option><option>BOTTLE</option><option>SET</option><option>PAIR</option><option>BOX</option><option>PACK</option><option>LITER</option></select></label>
             </div>
             <label><span>QR Code / Existing Code</span><input name="barcode" maxLength={100} placeholder="Optional" /><small>Leave blank if this new product does not already have a QR value.</small></label>

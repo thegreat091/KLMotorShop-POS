@@ -66,7 +66,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   if (!canViewProducts) redirect("/dashboard");
 
-  const canManageProducts = user.role === "OWNER";
+  const canManageProducts = user.role === "OWNER" || user.role === "ADMIN";
+  const canEditProducts = canManageProducts || user.role === "INVENTORY";
   const canPrintQrLabels = user.role === "ADMIN" || user.role === "INVENTORY" || user.role === "OWNER";
   const parameters = await searchParams;
   const search = parameters.search?.trim() ?? "";
@@ -235,12 +236,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                       <td className={styles.priceStrong}>{peso(Number(product.selling_price))}</td>
                       <td><span className={product.is_active === 1 ? styles.activeBadge : styles.inactiveBadge}>{product.is_active === 1 ? "Active" : "Inactive"}</span></td>
                       <td>
-                        {canManageProducts ? (
+                        {canEditProducts ? (
                           <div className={styles.rowActions}>
                             <Link href={`/products/${product.id}`} className={styles.editButton}><Edit3 size={15} /> Edit</Link>
-                            <form action={toggleProductStatus.bind(null, product.id)}>
-                              <button type="submit" className={product.is_active === 1 ? styles.deactivateButton : styles.activateButton}>{product.is_active === 1 ? "Deactivate" : "Activate"}</button>
-                            </form>
+                            {canManageProducts ? (
+                              <form action={toggleProductStatus.bind(null, product.id)}>
+                                <button type="submit" className={product.is_active === 1 ? styles.deactivateButton : styles.activateButton}>{product.is_active === 1 ? "Deactivate" : "Activate"}</button>
+                              </form>
+                            ) : null}
                           </div>
                         ) : <span className={styles.viewOnlyText}>View only</span>}
                       </td>

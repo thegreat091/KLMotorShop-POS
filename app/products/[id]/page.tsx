@@ -19,7 +19,8 @@ interface EditProductPageProps { params: Promise<{ id: string }>; searchParams: 
 export default async function EditProductPage({ params, searchParams }: EditProductPageProps) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "OWNER") redirect("/products");
+  if (user.role !== "OWNER" && user.role !== "ADMIN" && user.role !== "INVENTORY") redirect("/products");
+  const inventoryLimitedEdit = user.role === "INVENTORY";
 
   const routeParameters = await params;
   const queryParameters = await searchParams;
@@ -39,7 +40,7 @@ export default async function EditProductPage({ params, searchParams }: EditProd
     <main className={styles.page}>
       <header className={styles.hero}>
         <Link href="/products" className={styles.backButton}><ArrowLeft size={19} />Back to Products</Link>
-        <div className={styles.titleBlock}><div className={styles.titleIcon}><Edit3 size={28} /></div><div><p>{product.product_code}</p><h1>Edit Product</h1><span>Update product master data, prices, reorder level, and status.</span></div></div>
+        <div className={styles.titleBlock}><div className={styles.titleIcon}><Edit3 size={28} /></div><div><p>{product.product_code}</p><h1>Edit Product</h1><span>{inventoryLimitedEdit ? "Update product name, category, and supplier. Pricing remains controlled by Owner/Admin." : "Update product master data, prices, reorder level, and status."}</span></div></div>
       </header>
 
       <section className={styles.content}>
@@ -49,27 +50,27 @@ export default async function EditProductPage({ params, searchParams }: EditProd
           <div className={styles.formBody}>
             <div className={styles.twoColumns}>
               <label className={styles.field}><span>Product Name <strong>*</strong></span><input name="product_name" maxLength={180} defaultValue={product.product_name} required /></label>
-              <label className={styles.field}><span>QR Code</span><input name="barcode" maxLength={100} defaultValue={product.barcode ?? ""} /></label>
+              <label className={styles.field}><span>QR Code</span><input name="barcode" maxLength={100} defaultValue={product.barcode ?? ""} readOnly={inventoryLimitedEdit} /></label>
             </div>
 
             <div className={styles.threeColumns}>
               <label className={styles.field}><span>Category</span><select name="category_id" defaultValue={product.category_id ? String(product.category_id) : ""}><option value="">No category</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-              <label className={styles.field}><span>Brand</span><select name="brand_id" defaultValue={product.brand_id ? String(product.brand_id) : ""}><option value="">No brand</option>{brands.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+              <label className={styles.field}><span>Brand</span><select name="brand_id" defaultValue={product.brand_id ? String(product.brand_id) : ""} disabled={inventoryLimitedEdit}><option value="">No brand</option>{brands.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
               <label className={styles.field}><span>Supplier</span><select name="supplier_id" defaultValue={product.supplier_id ? String(product.supplier_id) : ""}><option value="">No supplier</option>{suppliers.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
             </div>
 
-            <label className={styles.field}><span>Description</span><textarea name="description" defaultValue={product.description ?? ""} /></label>
+            <label className={styles.field}><span>Description</span><textarea name="description" defaultValue={product.description ?? ""} readOnly={inventoryLimitedEdit} /></label>
 
             <div className={styles.fourColumns}>
-              <label className={styles.field}><span>Unit <strong>*</strong></span><select name="unit" defaultValue={product.unit}><option>PCS</option><option>BOTTLE</option><option>SET</option><option>PAIR</option><option>BOX</option><option>PACK</option><option>LITER</option></select></label>
-              <label className={styles.field}><span>Cost Price</span><input type="number" name="cost_price" min="0" step="0.01" defaultValue={Number(product.cost_price).toFixed(2)} /></label>
-              <label className={styles.field}><span>Selling Price</span><input type="number" name="selling_price" min="0" step="0.01" defaultValue={Number(product.selling_price).toFixed(2)} /></label>
-              <label className={styles.field}><span>Reorder Level</span><input type="number" name="reorder_level" min="0" step="0.01" defaultValue={Number(product.reorder_level)} /></label>
+              <label className={styles.field}><span>Unit <strong>*</strong></span><select name="unit" defaultValue={product.unit} disabled={inventoryLimitedEdit}><option>PCS</option><option>BOTTLE</option><option>SET</option><option>PAIR</option><option>BOX</option><option>PACK</option><option>LITER</option></select></label>
+              <label className={styles.field}><span>Cost Price</span><input type="number" name="cost_price" min="0" step="0.01" defaultValue={Number(product.cost_price).toFixed(2)} readOnly={inventoryLimitedEdit} /></label>
+              <label className={styles.field}><span>Selling Price</span><input type="number" name="selling_price" min="0" step="0.01" defaultValue={Number(product.selling_price).toFixed(2)} readOnly={inventoryLimitedEdit} />{inventoryLimitedEdit ? <small>Only Owner/Admin can change selling price.</small> : null}</label>
+              <label className={styles.field}><span>Reorder Level</span><input type="number" name="reorder_level" min="0" step="0.01" defaultValue={Number(product.reorder_level)} readOnly={inventoryLimitedEdit} /></label>
             </div>
 
             <div className={styles.twoColumns}>
               <label className={styles.field}><span>Current Stock</span><input value={`${Number(product.quantity_on_hand).toLocaleString("en-PH")} ${product.unit}`} readOnly /><small>Stock quantity is changed only through inventory transactions.</small></label>
-              <label className={styles.field}><span>Status</span><select name="is_active" defaultValue={String(product.is_active)}><option value="1">Active</option><option value="0">Inactive</option></select></label>
+              <label className={styles.field}><span>Status</span><select name="is_active" defaultValue={String(product.is_active)} disabled={inventoryLimitedEdit}><option value="1">Active</option><option value="0">Inactive</option></select></label>
             </div>
           </div>
           <footer className={styles.formFooter}><Link href="/products">Cancel</Link><button type="submit"><Save size={19} />Save Changes</button></footer>

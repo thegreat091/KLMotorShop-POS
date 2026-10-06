@@ -14,8 +14,8 @@ export default async function StockInPage({ searchParams }: { searchParams: Prom
   const user = await getCurrentUser();
   if (!user) redirect("/");
   if (!["ADMIN", "OWNER", "INVENTORY", "CASHIER"].includes(user.role)) redirect("/dashboard");
-  const canCreate = ["ADMIN", "OWNER"].includes(user.role);
-  const canViewCosts = canCreate;
+  const canCreate = ["ADMIN", "OWNER", "INVENTORY"].includes(user.role);
+  const canViewCosts = ["ADMIN", "OWNER", "INVENTORY"].includes(user.role);
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
   const [rows] = await pool.query<StockInRow[]>(`
@@ -38,7 +38,7 @@ export default async function StockInPage({ searchParams }: { searchParams: Prom
       {params.success ? <div className={styles.successMessage}>{params.success}</div> : null}{params.error ? <div className={styles.errorMessage}>{params.error}</div> : null}
       <section className={styles.panel}><header className={styles.panelHeader}><div><p>History</p><h2>Received inventory</h2></div><span>{rows.length} transaction{rows.length===1?"":"s"}</span></header>
         <form className={styles.filters}><label><Search size={18}/><input name="search" defaultValue={search} placeholder="Search stock-in #, supplier, invoice..."/></label><button type="submit">Search</button><Link href="/inventory/stock-in">Reset</Link></form>
-        <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Stock-In #</th><th>Date</th><th>Supplier</th><th>Supplier Ref.</th><th>Lines</th><th>Qty</th>{canViewCosts ? <th>Total Cost</th> : null}<th></th></tr></thead><tbody>{rows.length===0?<tr><td colSpan={8}><div className={styles.empty}>No stock-in transactions yet.</div></td></tr>:rows.map((row)=><tr key={row.id}><td><strong>{row.reference_number}</strong></td><td>{new Date(row.transaction_date).toLocaleString("en-PH")}</td><td>{row.supplier_name ?? "—"}</td><td>{row.supplier_reference ?? "—"}</td><td>{Number(row.total_lines)}</td><td>{Number(row.total_quantity).toLocaleString("en-PH")}</td>{canViewCosts ? <td><strong>{peso(Number(row.total_cost))}</strong></td> : null}<td><Link className={styles.viewButton} href={`/inventory/stock-in/${row.id}`}>{canCreate ? "View" : "QR Labels"}</Link></td></tr>)}</tbody></table></div>
+        <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Stock-In #</th><th>Date</th><th>Supplier</th><th>Supplier Ref.</th><th>Lines</th><th>Qty</th>{canViewCosts ? <th>Total Cost</th> : null}<th></th></tr></thead><tbody>{rows.length===0?<tr><td colSpan={8}><div className={styles.empty}>No stock-in transactions yet.</div></td></tr>:rows.map((row)=><tr key={row.id}><td><strong>{row.reference_number}</strong></td><td>{new Date(row.transaction_date).toLocaleString("en-PH")}</td><td>{row.supplier_name ?? "—"}</td><td>{row.supplier_reference ?? "—"}</td><td>{Number(row.total_lines)}</td><td>{Number(row.total_quantity).toLocaleString("en-PH")}</td>{canViewCosts ? <td><strong>{peso(Number(row.total_cost))}</strong></td> : null}<td><Link className={styles.viewButton} href={`/inventory/stock-in/${row.id}`}>{user.role === "CASHIER" ? "QR Labels" : "View"}</Link></td></tr>)}</tbody></table></div>
       </section>
     </section>
   </main>;

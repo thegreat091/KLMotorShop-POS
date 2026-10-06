@@ -59,3 +59,4 @@
 
 .hero{border-bottom-color:#99f6e4}.titleIcon{background:#ccfbf1!important;color:#0f766e!important}.titleBlock p,.panelHeader p{color:#0f766e!important}.addButton{background:#0f766e!important}.panel{border-top-color:#0f766e!important}.table th{background:#f0fdfa!important;color:#0f766e!important}
 
+.priceForm{display:flex;align-items:center;gap:7px;min-width:190px}.priceForm input{width:105px;border:1px solid #d8dee6;border-radius:8px;padding:8px 9px;font:inherit}.priceForm button{border:0;border-radius:8px;padding:8px 10px;background:#1f7a4c;color:#fff;font-weight:800;cursor:pointer}

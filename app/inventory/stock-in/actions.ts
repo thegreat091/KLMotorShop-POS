@@ -25,7 +25,7 @@ function number(value: FormDataEntryValue | null): number {
 async function requireInventoryManager() {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (!["ADMIN", "OWNER"].includes(user.role)) redirect("/dashboard");
+  if (!["ADMIN", "OWNER", "INVENTORY"].includes(user.role)) redirect("/dashboard");
   return user;
 }
 
@@ -58,7 +58,109 @@ async function logActivity(connection: PoolConnection, params: {
   );
 }
 
+
+export type QuickProductActionState = {
+  error: string;
+  product?: {
+    id: number;
+    product_code: string;
+    product_name: string;
+    cost_price: number;
+    selling_price: number;
+    unit: string;
+  };
+};
+
+export async function createQuickProduct(_previousState: QuickProductActionState, formData: FormData): Promise<QuickProductActionState> {
+  const user = await requireInventoryManager();
+  const productName = text(formData.get("product_name"));
+  const barcode = text(formData.get("barcode"));
+  const unit = (text(formData.get("unit")) || "PCS").toUpperCase();
+  const categoryRaw = text(formData.get("category_id"));
+  const categoryId = categoryRaw ? Number(categoryRaw) : null;
+
+  if (!productName) return { error: "Product name is required." };
+  if (productName.length > 180) return { error: "Product name must not exceed 180 characters." };
+  if (barcode.length > 100) return { error: "QR value must not exceed 100 characters." };
+  if (!unit || unit.length > 30) return { error: "Enter a valid unit." };
+  if (categoryId !== null && (!Number.isInteger(categoryId) || categoryId <= 0)) return { error: "Invalid category." };
+
+  const [duplicates] = await pool.query<(RowDataPacket & { id: number })[]>(
+    `SELECT id FROM products WHERE LOWER(product_name) = LOWER(?) OR (? <> '' AND barcode = ?) LIMIT 1`,
+    [productName, barcode, barcode],
+  );
+  if (duplicates.length) return { error: barcode ? "A product with this name or QR value already exists." : "A product with this name already exists." };
+
+  const [codeRows] = await pool.query<(RowDataPacket & { next_number: number })[]>(
+    `SELECT COALESCE(MAX(CAST(SUBSTRING(product_code, 5) AS UNSIGNED)), 0) + 1 AS next_number FROM products WHERE product_code LIKE 'PRD-%'`,
+  );
+  const productCode = `PRD-${String(Number(codeRows[0]?.next_number ?? 1)).padStart(6, "0")}`;
+  const [result] = await pool.execute<ResultSetHeader>(
+    `INSERT INTO products (product_code, barcode, product_name, category_id, unit, cost_price, selling_price, quantity_on_hand, reorder_level, is_active, created_by, updated_by)
+     VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, 1, ?, ?)`,
+    [productCode, barcode || null, productName, categoryId, unit, user.id, user.id],
+  );
+
+  await pool.execute(
+    `INSERT INTO activity_logs (user_id, user_name, user_role, action, module, reference_table, reference_id) VALUES (?, ?, ?, ?, 'Products', 'products', ?)`,
+    [user.id, user.fullName, user.role, `Created product ${productCode} - ${productName} from Stock In`, String(result.insertId)],
+  );
+  revalidatePath("/products");
+  revalidatePath("/inventory/stock-in/new");
+  return { error: "", product: { id: result.insertId, product_code: productCode, product_name: productName, cost_price: 0, selling_price: 0, unit } };
+}
+
 export type StockInActionState = { error: string };
+
+export async function updateStockInSellingPrice(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/");
+  if (!["ADMIN", "OWNER"].includes(user.role)) redirect("/dashboard");
+
+  const stockInId = Number(text(formData.get("stock_in_id")));
+  const batchId = Number(text(formData.get("batch_id")));
+  const sellingPrice = number(formData.get("selling_price"));
+  if (!Number.isInteger(stockInId) || stockInId <= 0 || !Number.isInteger(batchId) || batchId <= 0) {
+    redirect(redirectUrl("/inventory/stock-in", "error", "Invalid Stock In record."));
+  }
+  if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
+    redirect(redirectUrl(`/inventory/stock-in/${stockInId}`, "error", "Selling price must be zero or greater."));
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query<Array<RowDataPacket & { product_id: number; batch_number: string; product_name: string }>>(
+      `SELECT sib.product_id, sib.batch_number, p.product_name
+       FROM stock_in_batches sib JOIN products p ON p.id=sib.product_id
+       WHERE sib.id=? AND sib.stock_transaction_id=? LIMIT 1 FOR UPDATE`,
+      [batchId, stockInId],
+    );
+    const batch = rows[0];
+    if (!batch) throw new Error("Stock In batch was not found.");
+
+    await connection.execute(`UPDATE stock_in_batches SET selling_price=? WHERE id=? AND stock_transaction_id=?`, [sellingPrice, batchId, stockInId]);
+    // Keep the product's current selling price aligned with the latest Owner/Admin decision.
+    await connection.execute(`UPDATE products SET selling_price=?, updated_by=? WHERE id=?`, [sellingPrice, user.id, batch.product_id]);
+    await logActivity(connection, {
+      userId: user.id, userName: user.fullName, userRole: user.role,
+      action: `Updated selling price for ${batch.product_name} / ${batch.batch_number} to PHP ${sellingPrice.toFixed(2)}`,
+      referenceId: String(stockInId),
+    });
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    const message = error instanceof Error ? error.message : "Unable to update selling price.";
+    redirect(redirectUrl(`/inventory/stock-in/${stockInId}`, "error", message));
+  } finally {
+    connection.release();
+  }
+  revalidatePath(`/inventory/stock-in/${stockInId}`);
+  revalidatePath(`/inventory/stock-in/${stockInId}/labels`);
+  revalidatePath("/products");
+  revalidatePath("/pos");
+  redirect(redirectUrl(`/inventory/stock-in/${stockInId}`, "success", "Selling price updated."));
+}
 
 export async function createStockIn(_previousState: StockInActionState, formData: FormData): Promise<StockInActionState> {
   const user = await requireInventoryManager();
@@ -108,7 +210,7 @@ export async function createStockIn(_previousState: StockInActionState, formData
     if (!Number.isFinite(unitCost) || unitCost < 0) {
       return { error: `Unit cost on line ${index + 1} must be zero or greater. Your Stock In entries were kept.` };
     }
-    if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
+    if (["ADMIN", "OWNER"].includes(user.role) && (!Number.isFinite(sellingPrice) || sellingPrice < 0)) {
       return { error: `Selling price on line ${index + 1} must be zero or greater. Your Stock In entries were kept.` };
     }
   }
@@ -162,8 +264,12 @@ export async function createStockIn(_previousState: StockInActionState, formData
       const productId = productIds[index];
       const quantity = quantities[index];
       const unitCost = unitCosts[index];
-      const sellingPrice = sellingPrices[index];
+      const submittedSellingPrice = sellingPrices[index];
       const product = products.find((row) => row.id === productId)!;
+      // Inventory can receive stock and enter purchase cost, but only Owner/Admin can decide selling price.
+      const sellingPrice = ["ADMIN", "OWNER"].includes(user.role)
+        ? submittedSellingPrice
+        : Number(product.selling_price);
       const subtotal = quantity * unitCost;
 
       const [itemResult] = await connection.execute<ResultSetHeader>(

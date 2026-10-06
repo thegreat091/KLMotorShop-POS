@@ -9,17 +9,19 @@ import styles from "../stock-in.module.css";
 
 interface ProductRow extends RowDataPacket { id: number; product_code: string; product_name: string; cost_price: number; selling_price: number; unit: string; }
 interface SupplierRow extends RowDataPacket { id: number; supplier_name: string; }
+interface CategoryRow extends RowDataPacket { id: number; category_name: string; }
 
 export default async function NewStockInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (!["ADMIN", "OWNER"].includes(user.role)) redirect("/dashboard");
+  if (!["ADMIN", "OWNER", "INVENTORY"].includes(user.role)) redirect("/dashboard");
   const parameters = await searchParams;
   const [products] = await pool.query<ProductRow[]>(`SELECT id, product_code, product_name, cost_price, selling_price, unit FROM products WHERE is_active = 1 ORDER BY product_name`);
   const [suppliers] = await pool.query<SupplierRow[]>(`SELECT id, supplier_name FROM suppliers WHERE is_active = 1 ORDER BY supplier_name`);
+  const [categories] = await pool.query<CategoryRow[]>(`SELECT id, category_name FROM product_categories WHERE is_active = 1 ORDER BY category_name`);
 
   return <main className={styles.page}>
     <header className={styles.hero}><div><Link href="/inventory/stock-in" className={styles.backButton}><ArrowLeft size={19} /> Stock In</Link><div className={styles.titleBlock}><div className={styles.titleIcon}><PackagePlus size={28} /></div><div><p>Inventory</p><h1>New Stock In</h1><span>Receive products, create batches, and generate QR code stickers.</span></div></div></div></header>
-    <section className={styles.content}>{parameters.error ? <div className={styles.errorMessage}>{parameters.error}</div> : null}<StockInForm products={products.map((row) => ({ ...row }))} suppliers={suppliers.map((row) => ({ ...row }))} /></section>
+    <section className={styles.content}>{parameters.error ? <div className={styles.errorMessage}>{parameters.error}</div> : null}<StockInForm canEditSellingPrice={["ADMIN", "OWNER"].includes(user.role)} products={products.map((row) => ({ ...row }))} suppliers={suppliers.map((row) => ({ ...row }))} categories={categories.map((row) => ({ ...row }))} /></section>
   </main>;
 }

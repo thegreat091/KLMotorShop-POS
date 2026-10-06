@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, Check, PackageSearch, Plus, Search, Trash2, X } from "lucide-react";
-import { useActionState, useMemo, useRef, useState } from "react";
-import { createStockIn, type StockInActionState } from "./actions";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { createQuickProduct, createStockIn, type QuickProductActionState, type StockInActionState } from "./actions";
 import styles from "./stock-in-form.module.css";
 
 type ProductOption = {
@@ -15,12 +15,17 @@ type ProductOption = {
 };
 
 type SupplierOption = { id: number; supplier_name: string };
+type CategoryOption = { id: number; category_name: string };
 type Line = { key: number; productId: string; quantity: string; unitCost: string; sellingPrice: string };
 
 const initialState: StockInActionState = { error: "" };
+const initialQuickProductState: QuickProductActionState = { error: "" };
 
-export default function StockInForm({ products, suppliers }: { products: ProductOption[]; suppliers: SupplierOption[] }) {
+export default function StockInForm({ products, suppliers, categories, canEditSellingPrice }: { products: ProductOption[]; suppliers: SupplierOption[]; categories: CategoryOption[]; canEditSellingPrice: boolean }) {
   const [state, formAction, pending] = useActionState(createStockIn, initialState);
+  const [quickState, quickProductAction, quickPending] = useActionState(createQuickProduct, initialQuickProductState);
+  const [availableProducts, setAvailableProducts] = useState<ProductOption[]>(products);
+  const [createOpen, setCreateOpen] = useState(false);
   const [nextKey, setNextKey] = useState(2);
   const [clientError, setClientError] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -30,16 +35,16 @@ export default function StockInForm({ products, suppliers }: { products: Product
   ]);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const productMap = useMemo(() => new Map(products.map((product) => [String(product.id), product])), [products]);
+  const productMap = useMemo(() => new Map(availableProducts.map((product) => [String(product.id), product])), [availableProducts]);
   const selectedProductIds = useMemo(() => new Set(lines.map((line) => line.productId).filter(Boolean)), [lines]);
 
   const filteredProducts = useMemo(() => {
     const query = pickerSearch.trim().toLowerCase();
-    return products.filter((product) => {
+    return availableProducts.filter((product) => {
       if (!query) return true;
       return `${product.product_code} ${product.product_name} ${product.unit}`.toLowerCase().includes(query);
     });
-  }, [pickerSearch, products]);
+  }, [pickerSearch, availableProducts]);
 
   function openPicker() {
     setClientError("");
@@ -124,6 +129,16 @@ export default function StockInForm({ products, suppliers }: { products: Product
   }, 0);
 
   const totalLabels = lines.reduce((sum, line) => sum + (line.productId ? Math.max(0, Number(line.quantity || 0) || 0) : 0), 0);
+  useEffect(() => {
+    if (!quickState.product) return;
+    const created = quickState.product;
+    setAvailableProducts((current) => current.some((item) => item.id === created.id) ? current : [...current, created].sort((a, b) => a.product_name.localeCompare(b.product_name)));
+    addProduct(created);
+    setCreateOpen(false);
+  // quickState changes only after the quick-create server action finishes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickState.product]);
+
   const visibleError = clientError || state.error;
 
   return (
@@ -160,7 +175,7 @@ export default function StockInForm({ products, suppliers }: { products: Product
                     </td>
                     <td><input name="quantity" type="number" min="1" step="1" required={Boolean(line.productId)} disabled={!line.productId} value={line.quantity} onChange={(event) => updateLine(line.key, { quantity: event.target.value })} /></td>
                     <td><input name="unit_cost" type="number" min="0" step="0.01" required={Boolean(line.productId)} disabled={!line.productId} value={line.unitCost} onChange={(event) => updateLine(line.key, { unitCost: event.target.value })} /></td>
-                    <td><input name="selling_price" type="number" min="0" step="0.01" required={Boolean(line.productId)} disabled={!line.productId} value={line.sellingPrice} onChange={(event) => updateLine(line.key, { sellingPrice: event.target.value })} /></td>
+                    <td><input name="selling_price" type="number" min="0" step="0.01" required={Boolean(line.productId)} disabled={!line.productId} readOnly={!canEditSellingPrice} title={canEditSellingPrice ? "Set selling price" : "Selling price is controlled by Owner/Admin"} value={line.sellingPrice} onChange={(event) => updateLine(line.key, { sellingPrice: event.target.value })} />{line.productId && !canEditSellingPrice ? <small className={styles.priceReadOnly}>Owner/Admin controlled</small> : null}</td>
                     <td className={styles.money}>₱{lineCost.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td><button type="button" className={styles.removeButton} onClick={() => removeLine(line.key)} aria-label="Remove line"><Trash2 size={17} /></button></td>
                   </tr>;
@@ -181,7 +196,7 @@ export default function StockInForm({ products, suppliers }: { products: Product
           <header className={styles.modalHeader}><div><p>Add to Stock In</p><h2>Select Product</h2></div><button type="button" onClick={closePicker} aria-label="Close product selector"><X size={20}/></button></header>
           <div className={styles.searchBox}><Search size={19}/><input ref={searchRef} value={pickerSearch} onChange={(event) => setPickerSearch(event.target.value)} placeholder="Search product name, code, or unit..." /></div>
           <div className={styles.productResults}>
-            {filteredProducts.length === 0 ? <div className={styles.noResults}><PackageSearch size={28}/><strong>No products found</strong><span>Try a different product name or code.</span></div> : filteredProducts.map((product) => {
+            {filteredProducts.length === 0 ? <div className={styles.noResults}><PackageSearch size={28}/><strong>No products found</strong><span>This product may not be registered yet.</span><button type="button" className={styles.createProductButton} onClick={() => setCreateOpen(true)}><Plus size={16}/> Add New Product</button></div> : filteredProducts.map((product) => {
               const alreadyAdded = selectedProductIds.has(String(product.id));
               return <button key={product.id} type="button" className={styles.productResult} disabled={alreadyAdded} onClick={() => addProduct(product)}>
                 <div><strong>{product.product_name}</strong><span>{product.product_code} · {product.unit}</span></div>
@@ -189,7 +204,24 @@ export default function StockInForm({ products, suppliers }: { products: Product
               </button>;
             })}
           </div>
-          <footer className={styles.modalFooter}><span>{filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} shown</span><button type="button" onClick={closePicker}>Close</button></footer>
+          <footer className={styles.modalFooter}><span>{filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} shown</span><div className={styles.modalFooterActions}><button type="button" className={styles.newProductFooterButton} onClick={() => setCreateOpen(true)}><Plus size={15}/> New Product</button><button type="button" onClick={closePicker}>Close</button></div></footer>
+        </section>
+      </div> : null}
+
+      {createOpen ? <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCreateOpen(false); }}>
+        <section className={styles.quickProductModal} role="dialog" aria-modal="true" aria-label="Create new product">
+          <header className={styles.modalHeader}><div><p>Stock In</p><h2>Add New Product</h2></div><button type="button" onClick={() => setCreateOpen(false)} aria-label="Close new product form"><X size={20}/></button></header>
+          <form action={quickProductAction} className={styles.quickProductForm}>
+            {quickState.error ? <div className={styles.formError}><AlertTriangle size={18}/><span>{quickState.error}</span></div> : null}
+            <label><span>Product Name <strong>*</strong></span><input name="product_name" maxLength={180} defaultValue={pickerSearch} autoFocus required placeholder="Example: Brake Shoe" /></label>
+            <div className={styles.quickGrid}>
+              <label><span>Category</span><select name="category_id" defaultValue=""><option value="">No category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.category_name}</option>)}</select></label>
+              <label><span>Unit <strong>*</strong></span><select name="unit" defaultValue="PCS"><option>PCS</option><option>BOTTLE</option><option>SET</option><option>PAIR</option><option>BOX</option><option>PACK</option><option>LITER</option></select></label>
+            </div>
+            <label><span>QR Code / Existing Code</span><input name="barcode" maxLength={100} placeholder="Optional" /><small>Leave blank if this new product does not already have a QR value.</small></label>
+            <div className={styles.quickInfo}>The product will be created with zero stock. Enter its quantity and purchase cost in the Stock In row. Selling price can only be set or changed by Owner/Admin.</div>
+            <footer className={styles.quickActions}><button type="button" onClick={() => setCreateOpen(false)}>Cancel</button><button type="submit" disabled={quickPending}>{quickPending ? "Creating..." : "Create & Add to Stock In"}</button></footer>
+          </form>
         </section>
       </div> : null}
     </>

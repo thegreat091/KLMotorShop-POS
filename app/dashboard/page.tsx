@@ -469,7 +469,7 @@ export default async function DashboardPage() {
               <span className={styles.navSectionLabel}>Inventory</span>
               <Link href="/products"><PackageSearch size={20} />Products</Link>
               {(canManageInventory || user.role === "OWNER") ? <Link href="/inventory/qr-labels"><QrCode size={20} />QR Labels</Link> : null}
-              {canManageInventory ? <Link href="/inventory/stock-in"><PackagePlus size={20} />Stock In</Link> : null}
+              {["ADMIN", "OWNER", "INVENTORY", "CASHIER"].includes(user.role) ? <Link href="/inventory/stock-in"><PackagePlus size={20} />Stock In</Link> : null}
               {canManageInventory ? <Link href="/inventory/stock-adjustments"><ClipboardPenLine size={20} />Stock Out / Adjustments</Link> : null}
               {(canManageInventory || user.role === "OWNER") ? <Link href="/inventory/ledger"><Activity size={20} />Inventory Ledger</Link> : null}
               {canViewInventoryDashboard ? <Link href="/inventory-dashboard"><Gauge size={20} />Inventory Dashboard</Link> : null}
@@ -554,7 +554,7 @@ export default async function DashboardPage() {
                     : "Live overview of today&apos;s sales, workshop, and inventory."}
               </span>
             </div>
-            {user.role !== "INVENTORY" ? <Link href="/pos" className={styles.newSaleButton}><ShoppingCart size={20} />New Sale</Link> : <Link href="/inventory/stock-in" className={styles.newSaleButton}><PackagePlus size={20} />Stock In</Link>}
+            {user.role !== "INVENTORY" ? <Link href="/pos" className={styles.newSaleButton}><ShoppingCart size={20} />New Sale</Link> : <Link href="/inventory/stock-inquiry" className={styles.newSaleButton}><PackageSearch size={20} />Stock Inquiry</Link>}
           </div>
 
           <div className={styles.metrics}>
@@ -693,7 +693,6 @@ export default async function DashboardPage() {
               {user.role === "INVENTORY" ? (
                 <>
                   <div className={styles.inventoryQuickActions}>
-                    <Link href="/inventory/stock-in"><PackagePlus size={22} /><div><strong>Receive Stock</strong><span>Record incoming products and batches</span></div></Link>
                     <Link href="/inventory/stock-adjustments"><ClipboardPenLine size={22} /><div><strong>Stock Adjustment</strong><span>Record stock out and corrections</span></div></Link>
                     <Link href="/inventory/stock-inquiry"><PackageSearch size={22} /><div><strong>Stock Inquiry</strong><span>Check current product availability</span></div></Link>
                     <Link href="/inventory/ledger"><Activity size={22} /><div><strong>Inventory Ledger</strong><span>Review complete stock movement</span></div></Link>
@@ -703,7 +702,7 @@ export default async function DashboardPage() {
                     <header className={styles.panelHeader}><div><p>Stock Movement</p><h2>Recent inventory activity</h2></div><Link href="/inventory/ledger">View ledger</Link></header>
                     <div className={styles.list}>
                       {stockEvents.length === 0 ? <div className={styles.compactEmpty}>No recent inventory movement.</div> : stockEvents.map((event) => (
-                        <Link href={event.transaction_type === "STOCK_IN" ? `/inventory/stock-in/${event.id}` : "/inventory/ledger"} className={styles.listRow} key={event.id}>
+                        <Link href="/inventory/ledger" className={styles.listRow} key={event.id}>
                           <div><strong>{event.reference_number}</strong><span>{shortDateTime(event.transaction_date)}</span></div>
                           <span className={styles.statusPill}>{statusLabel(event.transaction_type)}</span>
                         </Link>

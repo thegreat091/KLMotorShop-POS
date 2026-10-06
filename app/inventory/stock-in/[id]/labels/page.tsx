@@ -33,7 +33,7 @@ export default async function LabelsPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (!["ADMIN", "INVENTORY", "OWNER"].includes(user.role)) redirect("/dashboard");
+  if (!["ADMIN", "OWNER", "INVENTORY", "CASHIER"].includes(user.role)) redirect("/dashboard");
 
   const { id } = await params;
   const stockInId = Number(id);

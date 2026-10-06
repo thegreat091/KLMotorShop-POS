@@ -13,7 +13,7 @@ interface SupplierRow extends RowDataPacket { id: number; supplier_name: string;
 export default async function NewStockInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "OWNER") redirect("/dashboard");
+  if (!["ADMIN", "OWNER"].includes(user.role)) redirect("/dashboard");
   const parameters = await searchParams;
   const [products] = await pool.query<ProductRow[]>(`SELECT id, product_code, product_name, cost_price, selling_price, unit FROM products WHERE is_active = 1 ORDER BY product_name`);
   const [suppliers] = await pool.query<SupplierRow[]>(`SELECT id, supplier_name FROM suppliers WHERE is_active = 1 ORDER BY supplier_name`);

@@ -25,7 +25,7 @@ function number(value: FormDataEntryValue | null): number {
 async function requireInventoryManager() {
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "OWNER") redirect("/dashboard");
+  if (!["ADMIN", "OWNER"].includes(user.role)) redirect("/dashboard");
   return user;
 }
 
